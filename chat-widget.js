@@ -16,6 +16,34 @@ style: { primaryColor: "#854fff" }
 const CIRA_AVATAR = config.branding.avatar ||
 "https://camarapetrolera.app/public/images/cirabot.png";
 
+/* ---------------- LANGUAGE DETECTION ---------------- */
+
+let userLang = null;
+
+function detectLanguage(text){
+
+if(userLang) return userLang;
+
+const spanishWords = /(hola|buenos|buenas|buscar|empresa|empresas|servicio|servicios|gracias|saludos)/i;
+
+if(spanishWords.test(text)){
+userLang = "es";
+}else{
+userLang = "en";
+}
+
+return userLang;
+}
+
+/* ---------------- GREETING DETECTION ---------------- */
+
+function isGreeting(text){
+
+return /^(hola|hi|hello|hey|saludos|buenas|good morning|good afternoon|good evening)$/i
+.test(text.trim());
+
+}
+
 /* ---------------- STYLES ---------------- */
 
 const styles = `
@@ -234,9 +262,7 @@ ${config.branding.welcomeText}
 <button id="n8n-send">➤</button>
 </div>
 
-<div class="n8n-chat-note">
-${config.footerNote || ""}
-</div>
+<div id="n8n-chat-note" class="n8n-chat-note"></div>
 
 </div>
 </div>
@@ -246,6 +272,20 @@ document.body.insertAdjacentHTML("beforeend",html);
 
 document.querySelector(".n8n-chat-widget")
 .style.setProperty("--n8n-color",config.style.primaryColor);
+
+/* ---------------- NOTE TEXT ---------------- */
+
+const note = document.getElementById("n8n-chat-note");
+
+function updateNote(){
+
+if(userLang==="es"){
+note.innerHTML="Nota: La búsqueda detallada y generación de PDFs puede tomar unos segundos.";
+}else{
+note.innerHTML="Note: Detailed searches and PDF generation may take a few seconds.";
+}
+
+}
 
 /* ---------------- ELEMENTS ---------------- */
 
@@ -274,6 +314,8 @@ close.addEventListener("click",toggle);
 /* ---------------- MESSAGE RENDER ---------------- */
 
 function addMsg(text,type){
+
+text = text.replace(/\\n/g,"<br>");
 
 if(type==="bot"){
 
@@ -316,10 +358,41 @@ if(sending) return;
 const text=input.value.trim();
 if(!text) return;
 
+detectLanguage(text);
+updateNote();
+
 sending=true;
 
 addMsg(text,"user");
 input.value="";
+
+/* ---- Greeting auto response ---- */
+
+if(isGreeting(text)){
+
+let reply;
+
+if(userLang==="es"){
+
+reply=`Hola! Soy CIRA, asistente virtual de la Cámara Petrolera de Venezuela.<br><br>
+Puedo ayudarte a encontrar empresas afiliadas, servicios y datos de contacto.<br><br>
+¿Qué necesitas buscar hoy?`;
+
+}else{
+
+reply=`Hello! I'm CIRA, the virtual assistant of the Venezuelan Petroleum Chamber.<br><br>
+I can help you find member companies, services and contact information.<br><br>
+What would you like to search for today?`;
+
+}
+
+addMsg(reply,"bot");
+sending=false;
+return;
+
+}
+
+/* ---- Loader ---- */
 
 const loaderRow=document.createElement("div");
 loaderRow.className="n8n-bot-row";
@@ -333,13 +406,27 @@ const loader=document.createElement("div");
 loader.className="n8n-chat-msg bot";
 
 loader.innerHTML=
-'<div class="cira-loader-inner"><div class="cira-spinner"></div><span>CIRA is processing your query...</span></div>';
+'<div class="cira-loader-inner"><div class="cira-spinner"></div><span>'+
+(userLang==="es"?"CIRA está procesando su consulta...":"CIRA is processing your query...")
++'</span></div>';
 
 loaderRow.appendChild(avatar);
 loaderRow.appendChild(loader);
 
 msgs.appendChild(loaderRow);
 msgs.scrollTop=msgs.scrollHeight;
+
+/* ---- 45s patience message ---- */
+
+const patienceTimer=setTimeout(()=>{
+
+loader.innerHTML+=
+"<br><br>"+
+(userLang==="es"
+?"Las consultas a la base de datos pueden tardar más de lo habitual. Gracias por su paciencia."
+:"Database queries may take longer than usual. Thank you for your patience.");
+
+},45000);
 
 try{
 
@@ -348,6 +435,8 @@ method:"POST",
 headers:{"Content-Type":"application/json"},
 body:JSON.stringify({chatInput:text,sessionId:sessionId})
 });
+
+clearTimeout(patienceTimer);
 
 const data=await response.json();
 
@@ -361,7 +450,9 @@ reply=data.output||data.text||data.message;
 }
 
 if(!reply){
-reply="No response returned from server.";
+reply=userLang==="es"
+?"No se recibió respuesta del servidor."
+:"No response returned from server.";
 }
 
 const loader=document.getElementById("n8n-loader");
@@ -374,7 +465,11 @@ addMsg(reply,"bot");
 const loader=document.getElementById("n8n-loader");
 if(loader) loader.remove();
 
-addMsg("Connection error: "+err.message,"bot");
+addMsg(
+(userLang==="es"?"Error de conexión: ":"Connection error: ")
++err.message,
+"bot"
+);
 
 }
 
