@@ -46,8 +46,8 @@ function t(key){
 const dict={
 
 processing:{
-es:"CIRA está procesando su consulta...",
-en:"CIRA is processing your request..."
+es:"Estoy procesando su consulta...",
+en:"I'm processing your request..."
 },
 
 slow:{
@@ -140,6 +140,7 @@ color:white;
 .bot{
 background:white;
 border:1px solid #ddd;
+color:#333;
 }
 
 .row{
@@ -156,6 +157,26 @@ border-radius:50%;
 .loader{
 font-style:italic;
 color:#777;
+display:flex;
+align-items:center;
+gap:8px;
+}
+
+@keyframes cira-spin{to{transform:rotate(360deg)}}
+@keyframes cira-pulse{0%,100%{opacity:0.4}50%{opacity:1}}
+
+.cira-spinner{
+width:14px;
+height:14px;
+min-width:14px;
+border:2.5px solid #faa819;
+border-top-color:transparent;
+border-radius:50%;
+animation:cira-spin 0.75s linear infinite;
+}
+
+.cira-loader-text{
+animation:cira-pulse 1.6s ease-in-out infinite;
 }
 
 .note{
@@ -281,16 +302,29 @@ function addBot(text){
 const row=document.createElement("div");
 row.className="row";
 
-row.innerHTML=`
-<img class="avatar" src="${avatar}">
-<div class="msg bot">${linkify(text)}</div>
-`;
+/* ── PROTECT data: URIs before linkify runs ──────────────────────────────
+   linkify's phone regex would corrupt the base64 digits inside the href.
+   We swap each data: URI out for a placeholder, run linkify on the rest,
+   then swap back. */
+var dataUris=[];
+var safeText=text.replace(/(href="data:[^"]+"|href='data:[^']+')/g,function(match){
+  var idx=dataUris.length;
+  dataUris.push(match);
+  return 'href="__DATAPLC'+idx+'__"';
+});
+
+var linked=linkify(safeText);
+
+dataUris.forEach(function(uri,i){
+  linked=linked.replace('href="__DATAPLC'+i+'__"',uri);
+});
+
+row.innerHTML=`<img class="avatar" src="${avatar}"><div class="msg bot">${linked}</div>`;
 
 msgs.appendChild(row);
 msgs.scrollTop=msgs.scrollHeight;
 
-/* Intercept data:text/html links — browsers block direct navigation to them.
-   Decode the base64 payload and write it into a new window, then print. */
+/* ── Intercept data:text/html links — decode and open in new window ────── */
 row.querySelectorAll('a[href^="data:text/html"]').forEach(function(a){
   a.addEventListener("click", function(e){
     e.preventDefault();
@@ -351,7 +385,7 @@ row.id="loader";
 
 row.innerHTML=`
 <img class="avatar" src="${avatar}">
-<div class="msg bot loader" id="loaderText">${t("processing")}</div>
+<div class="msg bot loader" id="loaderText"><div class="cira-spinner"></div><span class="cira-loader-text">${t("processing")}</span></div>
 `;
 
 msgs.appendChild(row);
