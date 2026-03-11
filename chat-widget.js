@@ -287,8 +287,34 @@ row.innerHTML=`
 `;
 
 msgs.appendChild(row);
-
 msgs.scrollTop=msgs.scrollHeight;
+
+/* Intercept data:text/html links — browsers block direct navigation to them.
+   Decode the base64 payload and write it into a new window, then print. */
+row.querySelectorAll('a[href^="data:text/html"]').forEach(function(a){
+  a.addEventListener("click", function(e){
+    e.preventDefault();
+    var href = a.getAttribute("href");
+    var b64  = href.replace(/^data:text\/html;(?:[^,]+,)?/, "");
+    try {
+      var bytes = atob(b64);
+      var chars = "";
+      for(var i=0;i<bytes.length;i++) chars+=String.fromCharCode(bytes.charCodeAt(i));
+      var html = decodeURIComponent(escape(chars));
+      var w = window.open("","_blank");
+      if(w){
+        w.document.open();
+        w.document.write(html);
+        w.document.close();
+        setTimeout(function(){ w.print(); }, 1200);
+      } else {
+        alert("Por favor permita ventanas emergentes para ver el reporte.\nPlease allow popups to view the report.");
+      }
+    } catch(err){
+      alert("Error al abrir el reporte: "+err.message);
+    }
+  });
+});
 
 }
 
