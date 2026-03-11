@@ -1,501 +1,421 @@
 (function () {
 "use strict";
 
-function initWidget() {
+function initWidget(){
 
-if (document.getElementById("n8n-chat-widget")) return;
+if(document.getElementById("n8n-chat-widget")) return;
 
-/* ---------------- CONFIG ---------------- */
+/* CONFIG */
 
-const config = window.ChatWidgetConfig || {
-webhookUrl: "",
-branding: { name: "Support", welcomeText: "Hello!" },
-style: { primaryColor: "#854fff" }
-};
+const config = window.ChatWidgetConfig || {};
 
-const CIRA_AVATAR = config.branding.avatar ||
+const webhook = config.webhookUrl;
+
+const avatar = config.avatar ||
 "https://camarapetrolera.app/public/images/cirabot.png";
 
-/* ---------------- LANGUAGE DETECTION ---------------- */
+let lang = null;
 
-let userLang = null;
+/* LANGUAGE DETECTOR */
 
-function detectLanguage(text){
+function detectLang(text){
 
-if(userLang) return userLang;
+if(lang) return lang;
 
-const spanishWords = /(hola|buenos|buenas|buscar|empresa|empresas|servicio|servicios|gracias|saludos)/i;
-
-if(spanishWords.test(text)){
-userLang = "es";
+if(/hola|buscar|empresa|empresas|servicio|servicios|gracias|saludos/i.test(text)){
+lang="es";
 }else{
-userLang = "en";
+lang="en";
 }
 
-return userLang;
+return lang;
 }
 
-/* ---------------- GREETING DETECTION ---------------- */
+/* GREETING */
 
 function isGreeting(text){
 
-return /^(hola|hi|hello|hey|saludos|buenas|good morning|good afternoon|good evening)$/i
-.test(text.trim());
+return /^(hola|hi|hello|hey|saludos|buenas)$/i.test(text.trim());
 
 }
 
-/* ---------------- STYLES ---------------- */
+/* TEXTS */
 
-const styles = `
-.n8n-chat-widget{--chat-color:var(--n8n-color,#854fff);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;z-index:2147483647}
-.n8n-chat-widget *{box-sizing:border-box}
+function t(key){
 
+const dict={
+
+processing:{
+es:"CIRA está procesando su consulta...",
+en:"CIRA is processing your request..."
+},
+
+slow:{
+es:"La consulta está tardando más de lo esperado. Algunas búsquedas en la base de datos pueden tomar hasta 1 minuto.",
+en:"This search is taking longer than expected. Some database queries may take up to a minute."
+},
+
+note:{
+es:"Nota: La búsqueda detallada y generación de PDFs puede tomar unos segundos.",
+en:"Note: Detailed searches and PDF generation may take a few seconds."
+},
+
+greeting:{
+es:`Hola! Soy CIRA, asistente virtual de la Cámara Petrolera de Venezuela.<br><br>
+Puedo ayudarte a encontrar empresas afiliadas, servicios y datos de contacto.<br><br>
+¿Qué necesitas buscar hoy?`,
+en:`Hello! I'm CIRA, the virtual assistant of the Venezuelan Petroleum Chamber.<br><br>
+I can help you find member companies, services and contact information.<br><br>
+What would you like to search for today?`
+}
+
+};
+
+return dict[key][lang || "es"];
+
+}
+
+/* STYLES */
+
+const style = document.createElement("style");
+
+style.innerHTML=`
 .n8n-chat-btn{
 position:fixed;
 bottom:20px;
 right:20px;
 width:60px;
 height:60px;
-background:var(--chat-color);
 border-radius:50%;
-box-shadow:0 4px 15px rgba(0,0,0,.2);
-cursor:pointer;
-border:none;
+background:#faa819;
 color:white;
-display:flex;
-align-items:center;
-justify-content:center;
-transition:transform .3s;
-z-index:99999
+border:none;
+cursor:pointer;
+z-index:99999;
 }
-
-.n8n-chat-btn:hover{transform:scale(1.1)}
-
-.n8n-chat-btn svg{width:28px;height:28px;fill:white}
 
 .n8n-chat-window{
 position:fixed;
 bottom:90px;
 right:20px;
 width:380px;
-height:600px;
-max-height:85vh;
+height:650px;
 background:white;
 border-radius:12px;
 box-shadow:0 5px 30px rgba(0,0,0,.15);
 display:none;
 flex-direction:column;
 overflow:hidden;
-border:1px solid #e0e0e0;
-z-index:99999
+z-index:99999;
 }
 
-.n8n-chat-window.open{display:flex}
-
-.n8n-chat-header{
-padding:16px;
-background:var(--chat-color);
-color:white;
+.n8n-chat-window.open{
 display:flex;
-align-items:center;
-justify-content:space-between
-}
-
-.n8n-chat-header h3{margin:0;font-size:16px;font-weight:600}
-
-.n8n-chat-close{
-background:none;
-border:none;
-color:white;
-font-size:24px;
-cursor:pointer
 }
 
 .n8n-chat-body{
 flex:1;
 overflow-y:auto;
 padding:15px;
-background:#f9f9f9;
 display:flex;
 flex-direction:column;
-gap:10px
+gap:10px;
+background:#f9f9f9;
 }
 
-.n8n-chat-msg{
-max-width:85%;
+.msg{
 padding:12px;
 border-radius:10px;
+max-width:85%;
 font-size:14px;
 line-height:1.5;
-word-wrap:break-word
 }
 
-.n8n-chat-msg.user{
+.user{
 align-self:flex-end;
-background:var(--chat-color);
+background:#faa819;
 color:white;
-border-bottom-right-radius:2px
 }
 
-.n8n-chat-msg.bot{
+.bot{
 background:white;
-color:#333;
 border:1px solid #ddd;
-border-bottom-left-radius:2px;
-box-shadow:0 1px 2px rgba(0,0,0,.05)
 }
 
-.n8n-bot-row{
+.row{
 display:flex;
-align-items:flex-start;
-gap:8px
+gap:8px;
 }
 
-.n8n-bot-avatar{
+.avatar{
 width:28px;
 height:28px;
 border-radius:50%;
-flex-shrink:0;
-margin-top:2px
 }
 
-.n8n-chat-footer{
-padding:12px;
-background:white;
-border-top:1px solid #eee;
-display:flex;
-gap:8px
+.loader{
+font-style:italic;
+color:#777;
 }
 
-.n8n-chat-footer textarea{
-flex:1;
-border:1px solid #ddd;
-border-radius:20px;
-padding:10px 14px;
-resize:none;
-height:44px;
-outline:none;
-font-family:inherit;
-font-size:14px
-}
-
-.n8n-chat-footer button{
-background:var(--chat-color);
-color:white;
-border:none;
-width:40px;
-height:40px;
-border-radius:50%;
-cursor:pointer;
-display:flex;
-align-items:center;
-justify-content:center
-}
-
-.n8n-chat-note{
+.note{
 font-size:11px;
 color:#777;
-padding:6px 12px 10px;
+padding:8px;
 text-align:center;
-background:white;
-border-top:1px solid #eee
+border-top:1px solid #eee;
 }
 
-@keyframes cira-spin{to{transform:rotate(360deg)}}
-@keyframes cira-pulse{0%,100%{opacity:.5}50%{opacity:1}}
+.footer{
+display:flex;
+padding:10px;
+gap:8px;
+border-top:1px solid #eee;
+}
 
-.cira-loader-inner{display:flex;align-items:center;gap:10px}
+textarea{
+flex:1;
+border-radius:20px;
+border:1px solid #ddd;
+padding:10px;
+resize:none;
+height:42px;
+}
 
-.cira-spinner{
-width:15px;
-height:15px;
-border:2.5px solid var(--chat-color);
-border-top-color:transparent;
+button.send{
+width:40px;
 border-radius:50%;
-animation:cira-spin .7s linear infinite
-}
-
-.cira-loader-inner span{
-font-size:13px;
-color:#888;
-font-style:italic;
-animation:cira-pulse 1.6s ease-in-out infinite
+border:none;
+background:#faa819;
+color:white;
 }
 `;
 
-const styleSheet=document.createElement("style");
-styleSheet.textContent=styles;
-document.head.appendChild(styleSheet);
+document.head.appendChild(style);
 
-/* ---------------- HTML ---------------- */
+/* HTML */
 
-const html=`
-<div id="n8n-chat-widget" class="n8n-chat-widget">
+document.body.insertAdjacentHTML("beforeend",`
 
-<button id="n8n-btn" class="n8n-chat-btn">
-<svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
-</button>
+<div id="n8n-chat-widget">
 
-<div id="n8n-window" class="n8n-chat-window">
+<button id="chatbtn" class="n8n-chat-btn">💬</button>
 
-<div class="n8n-chat-header">
-<h3>${config.branding.name}</h3>
-<button class="n8n-chat-close">&times;</button>
-</div>
+<div id="chatwin" class="n8n-chat-window">
 
-<div id="n8n-messages" class="n8n-chat-body">
+<div class="n8n-chat-body" id="msgs">
 
-<div style="text-align:center;padding:20px">
+<div style="text-align:center">
 
-<img src="${CIRA_AVATAR}" style="width:60px;height:60px;border-radius:50%;margin-bottom:10px">
+<img src="${avatar}" style="width:60px;border-radius:50%;margin-bottom:10px">
 
-<div style="font-size:.95em;opacity:.85">
-${config.branding.welcomeText}
-</div>
+<div>¡Hola! Soy CIRA</div>
 
 </div>
 
 </div>
 
-<div class="n8n-chat-footer">
-<textarea id="n8n-input" placeholder="Type a message..." rows="1"></textarea>
-<button id="n8n-send">➤</button>
+<div class="footer">
+
+<textarea id="input"></textarea>
+
+<button class="send" id="send">➤</button>
+
 </div>
 
-<div id="n8n-chat-note" class="n8n-chat-note"></div>
+<div class="note" id="note"></div>
 
 </div>
+
 </div>
-`;
+`);
 
-document.body.insertAdjacentHTML("beforeend",html);
+/* ELEMENTS */
 
-document.querySelector(".n8n-chat-widget")
-.style.setProperty("--n8n-color",config.style.primaryColor);
+const win=document.getElementById("chatwin");
+const btn=document.getElementById("chatbtn");
+const msgs=document.getElementById("msgs");
+const send=document.getElementById("send");
+const input=document.getElementById("input");
+const note=document.getElementById("note");
 
-/* ---------------- NOTE TEXT ---------------- */
+btn.onclick=()=>win.classList.toggle("open");
 
-const note = document.getElementById("n8n-chat-note");
+/* SESSION */
 
-function updateNote(){
+let sid=localStorage.getItem("cira_sid")||crypto.randomUUID();
+localStorage.setItem("cira_sid",sid);
 
-if(userLang==="es"){
-note.innerHTML="Nota: La búsqueda detallada y generación de PDFs puede tomar unos segundos.";
-}else{
-note.innerHTML="Note: Detailed searches and PDF generation may take a few seconds.";
+/* HELPERS */
+
+function linkify(text){
+
+text=text.replace(/\\n/g,"<br>");
+
+text=text.replace(
+/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)/g,
+'<a href="mailto:$1">$1</a>'
+);
+
+text=text.replace(
+/(\+?\d[\d\s]{7,})/g,
+'<a href="tel:$1">$1</a>'
+);
+
+return text;
+
 }
 
+function addUser(text){
+
+const d=document.createElement("div");
+d.className="msg user";
+d.innerHTML=text;
+msgs.appendChild(d);
+msgs.scrollTop=msgs.scrollHeight;
+
 }
 
-/* ---------------- ELEMENTS ---------------- */
-
-const btn=document.getElementById("n8n-btn");
-const win=document.getElementById("n8n-window");
-const close=document.querySelector(".n8n-chat-close");
-const msgs=document.getElementById("n8n-messages");
-const input=document.getElementById("n8n-input");
-const send=document.getElementById("n8n-send");
-
-let sessionId=localStorage.getItem("n8n_sid")||crypto.randomUUID();
-localStorage.setItem("n8n_sid",sessionId);
-
-let sending=false;
-
-/* ---------------- UI ---------------- */
-
-function toggle(){
-win.classList.toggle("open");
-if(win.classList.contains("open")) input.focus();
-}
-
-btn.addEventListener("click",toggle);
-close.addEventListener("click",toggle);
-
-/* ---------------- MESSAGE RENDER ---------------- */
-
-function addMsg(text,type){
-
-text = text.replace(/\\n/g,"<br>");
-
-if(type==="bot"){
+function addBot(text){
 
 const row=document.createElement("div");
-row.className="n8n-bot-row";
+row.className="row";
 
-const avatar=document.createElement("img");
-avatar.src=CIRA_AVATAR;
-avatar.className="n8n-bot-avatar";
-
-const div=document.createElement("div");
-div.className="n8n-chat-msg bot";
-div.innerHTML=text;
-
-row.appendChild(avatar);
-row.appendChild(div);
+row.innerHTML=`
+<img class="avatar" src="${avatar}">
+<div class="msg bot">${linkify(text)}</div>
+`;
 
 msgs.appendChild(row);
-
-}else{
-
-const div=document.createElement("div");
-div.className="n8n-chat-msg user";
-div.innerHTML=text;
-
-msgs.appendChild(div);
-
-}
 
 msgs.scrollTop=msgs.scrollHeight;
 
 }
 
-/* ---------------- SEND MESSAGE ---------------- */
+/* SEND */
 
 async function sendMsg(){
-
-if(sending) return;
 
 const text=input.value.trim();
 if(!text) return;
 
-detectLanguage(text);
-updateNote();
+detectLang(text);
 
-sending=true;
+note.innerHTML=t("note");
 
-addMsg(text,"user");
+addUser(text);
+
 input.value="";
 
-/* ---- Greeting auto response ---- */
+/* GREETING */
 
 if(isGreeting(text)){
 
-let reply;
+addBot(t("greeting"));
 
-if(userLang==="es"){
-
-reply=`Hola! Soy CIRA, asistente virtual de la Cámara Petrolera de Venezuela.<br><br>
-Puedo ayudarte a encontrar empresas afiliadas, servicios y datos de contacto.<br><br>
-¿Qué necesitas buscar hoy?`;
-
-}else{
-
-reply=`Hello! I'm CIRA, the virtual assistant of the Venezuelan Petroleum Chamber.<br><br>
-I can help you find member companies, services and contact information.<br><br>
-What would you like to search for today?`;
-
-}
-
-addMsg(reply,"bot");
-sending=false;
 return;
 
 }
 
-/* ---- Loader ---- */
+/* LOADER */
 
-const loaderRow=document.createElement("div");
-loaderRow.className="n8n-bot-row";
-loaderRow.id="n8n-loader";
+const row=document.createElement("div");
+row.className="row";
+row.id="loader";
 
-const avatar=document.createElement("img");
-avatar.src=CIRA_AVATAR;
-avatar.className="n8n-bot-avatar";
+row.innerHTML=`
+<img class="avatar" src="${avatar}">
+<div class="msg bot loader" id="loaderText">${t("processing")}</div>
+`;
 
-const loader=document.createElement("div");
-loader.className="n8n-chat-msg bot";
+msgs.appendChild(row);
 
-loader.innerHTML=
-'<div class="cira-loader-inner"><div class="cira-spinner"></div><span>'+
-(userLang==="es"?"CIRA está procesando su consulta...":"CIRA is processing your query...")
-+'</span></div>';
-
-loaderRow.appendChild(avatar);
-loaderRow.appendChild(loader);
-
-msgs.appendChild(loaderRow);
 msgs.scrollTop=msgs.scrollHeight;
 
-/* ---- 45s patience message ---- */
+/* SLOW MESSAGE */
 
-const patienceTimer=setTimeout(()=>{
+const slowTimer=setTimeout(()=>{
 
-loader.innerHTML+=
-"<br><br>"+
-(userLang==="es"
-?"Las consultas a la base de datos pueden tardar más de lo habitual. Gracias por su paciencia."
-:"Database queries may take longer than usual. Thank you for your patience.");
+const l=document.getElementById("loaderText");
+
+if(l){
+
+l.innerHTML+=`<br><br>${t("slow")}`;
+
+}
 
 },45000);
 
+/* CALL MODEL */
+
 try{
 
-const response=await fetch(config.webhookUrl,{
+const r=await fetch(webhook,{
 method:"POST",
 headers:{"Content-Type":"application/json"},
-body:JSON.stringify({chatInput:text,sessionId:sessionId})
+body:JSON.stringify({chatInput:text,sessionId:sid})
 });
 
-clearTimeout(patienceTimer);
+clearTimeout(slowTimer);
 
-const data=await response.json();
+const data=await r.json();
 
 let reply="";
 
-if(Array.isArray(data)&&data.length>0){
-reply=data[0].output||data[0].text||data[0].message;
-}
-else if(typeof data==="object"){
-reply=data.output||data.text||data.message;
-}
+if(Array.isArray(data)){
 
-if(!reply){
-reply=userLang==="es"
-?"No se recibió respuesta del servidor."
-:"No response returned from server.";
-}
+reply=data[0]?.output || data[0]?.text;
 
-const loader=document.getElementById("n8n-loader");
-if(loader) loader.remove();
+}else{
 
-addMsg(reply,"bot");
-
-}catch(err){
-
-const loader=document.getElementById("n8n-loader");
-if(loader) loader.remove();
-
-addMsg(
-(userLang==="es"?"Error de conexión: ":"Connection error: ")
-+err.message,
-"bot"
-);
+reply=data.output || data.text;
 
 }
 
-sending=false;
+document.getElementById("loader").remove();
+
+addBot(reply || "No response");
+
+}catch(e){
+
+clearTimeout(slowTimer);
+
+document.getElementById("loader").remove();
+
+addBot("Connection error");
 
 }
 
-/* ---------------- EVENTS ---------------- */
+}
 
-send.addEventListener("click",sendMsg);
+/* EVENTS */
 
-input.addEventListener("keypress",function(e){
+send.onclick=sendMsg;
+
+input.addEventListener("keypress",e=>{
+
 if(e.key==="Enter"&&!e.shiftKey){
+
 e.preventDefault();
+
 sendMsg();
+
 }
+
 });
 
 }
 
-/* ---------------- INIT ---------------- */
+/* INIT */
 
 if(document.readyState==="loading"){
+
 document.addEventListener("DOMContentLoaded",initWidget);
+
 }else{
+
 initWidget();
+
 }
 
 })();
