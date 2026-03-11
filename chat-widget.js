@@ -1,45 +1,66 @@
 (function () {
 "use strict";
 
+/* ------------------------------------------------ */
+/* SAFE INIT FOR WORDPRESS                          */
+/* ------------------------------------------------ */
+
+function ready(fn){
+if(document.readyState !== "loading"){
+fn();
+}else{
+document.addEventListener("DOMContentLoaded",fn);
+}
+}
+
+ready(initWidget);
+
+/* ------------------------------------------------ */
+/* MAIN INIT                                        */
+/* ------------------------------------------------ */
+
 function initWidget(){
 
 if(document.getElementById("n8n-chat-widget")) return;
 
-/* CONFIG */
-
 const config = window.ChatWidgetConfig || {};
-
-const webhook = config.webhookUrl;
-
-const avatar = config.avatar ||
-"https://camarapetrolera.app/public/images/cirabot.png";
+const webhook = config.webhookUrl || "";
+const avatar = config.avatar || "https://camarapetrolera.app/public/images/cirabot.png";
 
 let lang = null;
 
-/* LANGUAGE DETECTOR */
+/* ------------------------------------------------ */
+/* LANGUAGE DETECTION                               */
+/* ------------------------------------------------ */
 
 function detectLang(text){
 
 if(lang) return lang;
 
-if(/hola|buscar|empresa|empresas|servicio|servicios|gracias|saludos/i.test(text)){
+if(/hola|buscar|empresa|empresas|servicio|servicios|gracias|saludos|buenas/i.test(text)){
 lang="es";
 }else{
 lang="en";
 }
 
+updateNote();
+
 return lang;
 }
 
-/* GREETING */
+/* ------------------------------------------------ */
+/* GREETING DETECTOR                                */
+/* ------------------------------------------------ */
 
 function isGreeting(text){
 
-return /^(hola|hi|hello|hey|saludos|buenas)$/i.test(text.trim());
+return /^(hola|hi|hello|hey|saludos|buenas)\b/i.test(text.trim());
 
 }
 
-/* TEXTS */
+/* ------------------------------------------------ */
+/* TEXT DICTIONARY                                  */
+/* ------------------------------------------------ */
 
 function t(key){
 
@@ -75,11 +96,14 @@ return dict[key][lang || "es"];
 
 }
 
-/* STYLES */
+/* ------------------------------------------------ */
+/* CSS                                              */
+/* ------------------------------------------------ */
 
-const style = document.createElement("style");
+const style=document.createElement("style");
 
 style.innerHTML=`
+
 .n8n-chat-btn{
 position:fixed;
 bottom:20px;
@@ -92,6 +116,7 @@ color:white;
 border:none;
 cursor:pointer;
 z-index:99999;
+font-size:22px;
 }
 
 .n8n-chat-window{
@@ -162,21 +187,17 @@ align-items:center;
 gap:8px;
 }
 
-@keyframes cira-spin{to{transform:rotate(360deg)}}
-@keyframes cira-pulse{0%,100%{opacity:0.4}50%{opacity:1}}
-
 .cira-spinner{
 width:14px;
 height:14px;
-min-width:14px;
 border:2.5px solid #faa819;
 border-top-color:transparent;
 border-radius:50%;
 animation:cira-spin 0.75s linear infinite;
 }
 
-.cira-loader-text{
-animation:cira-pulse 1.6s ease-in-out infinite;
+@keyframes cira-spin{
+to{transform:rotate(360deg)}
 }
 
 .note{
@@ -209,12 +230,25 @@ border-radius:50%;
 border:none;
 background:#faa819;
 color:white;
+cursor:pointer;
 }
+
+@media (max-width:480px){
+.n8n-chat-window{
+width:100%;
+right:0;
+bottom:0;
+border-radius:12px 12px 0 0;
+}
+}
+
 `;
 
 document.head.appendChild(style);
 
-/* HTML */
+/* ------------------------------------------------ */
+/* HTML                                             */
+/* ------------------------------------------------ */
 
 document.body.insertAdjacentHTML("beforeend",`
 
@@ -224,7 +258,7 @@ document.body.insertAdjacentHTML("beforeend",`
 
 <div id="chatwin" class="n8n-chat-window">
 
-<div class="n8n-chat-body" id="msgs">
+<div id="msgs" class="n8n-chat-body">
 
 <div style="text-align:center">
 
@@ -238,23 +272,26 @@ document.body.insertAdjacentHTML("beforeend",`
 
 <div class="footer">
 
-<textarea id="input"></textarea>
+<textarea id="input" placeholder="Escribe tu consulta..."></textarea>
 
-<button class="send" id="send">➤</button>
-
-</div>
-
-<div class="note" id="note"></div>
+<button id="send" class="send">➤</button>
 
 </div>
 
+<div id="note" class="note"></div>
+
 </div>
+
+</div>
+
 `);
 
-/* ELEMENTS */
+/* ------------------------------------------------ */
+/* ELEMENTS                                         */
+/* ------------------------------------------------ */
 
-const win=document.getElementById("chatwin");
 const btn=document.getElementById("chatbtn");
+const win=document.getElementById("chatwin");
 const msgs=document.getElementById("msgs");
 const send=document.getElementById("send");
 const input=document.getElementById("input");
@@ -262,16 +299,35 @@ const note=document.getElementById("note");
 
 btn.onclick=()=>win.classList.toggle("open");
 
-/* SESSION */
+/* ------------------------------------------------ */
+/* SESSION                                          */
+/* ------------------------------------------------ */
 
-let sid=localStorage.getItem("cira_sid")||crypto.randomUUID();
+let sid=localStorage.getItem("cira_sid");
+
+if(!sid){
+sid=(crypto.randomUUID?crypto.randomUUID():Date.now().toString());
 localStorage.setItem("cira_sid",sid);
+}
 
-/* HELPERS */
+/* ------------------------------------------------ */
+/* NOTE                                             */
+/* ------------------------------------------------ */
+
+function updateNote(){
+note.innerHTML=t("note");
+}
+
+updateNote();
+
+/* ------------------------------------------------ */
+/* HELPERS                                          */
+/* ------------------------------------------------ */
 
 function linkify(text){
 
-text=text.replace(/\\n/g,"<br>");
+text=text.replace(/\n/g,"<br>");
+text=text.replace(/\/n/g,"<br>");
 
 text=text.replace(
 /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)/g,
@@ -292,6 +348,7 @@ function addUser(text){
 const d=document.createElement("div");
 d.className="msg user";
 d.innerHTML=text;
+
 msgs.appendChild(d);
 msgs.scrollTop=msgs.scrollHeight;
 
@@ -302,57 +359,19 @@ function addBot(text){
 const row=document.createElement("div");
 row.className="row";
 
-/* ── PROTECT data: URIs before linkify runs ──────────────────────────────
-   linkify's phone regex would corrupt the base64 digits inside the href.
-   We swap each data: URI out for a placeholder, run linkify on the rest,
-   then swap back. */
-var dataUris=[];
-var safeText=text.replace(/(href="data:[^"]+"|href='data:[^']+')/g,function(match){
-  var idx=dataUris.length;
-  dataUris.push(match);
-  return 'href="__DATAPLC'+idx+'__"';
-});
-
-var linked=linkify(safeText);
-
-dataUris.forEach(function(uri,i){
-  linked=linked.replace('href="__DATAPLC'+i+'__"',uri);
-});
-
-row.innerHTML=`<img class="avatar" src="${avatar}"><div class="msg bot">${linked}</div>`;
+row.innerHTML=`
+<img class="avatar" src="${avatar}">
+<div class="msg bot">${linkify(text)}</div>
+`;
 
 msgs.appendChild(row);
 msgs.scrollTop=msgs.scrollHeight;
 
-/* ── Intercept data:text/html links — decode and open in new window ────── */
-row.querySelectorAll('a[href^="data:text/html"]').forEach(function(a){
-  a.addEventListener("click", function(e){
-    e.preventDefault();
-    var href = a.getAttribute("href");
-    var b64  = href.replace(/^data:text\/html;(?:[^,]+,)?/, "");
-    try {
-      var bytes = atob(b64);
-      var chars = "";
-      for(var i=0;i<bytes.length;i++) chars+=String.fromCharCode(bytes.charCodeAt(i));
-      var html = decodeURIComponent(escape(chars));
-      var w = window.open("","_blank");
-      if(w){
-        w.document.open();
-        w.document.write(html);
-        w.document.close();
-        setTimeout(function(){ w.print(); }, 1200);
-      } else {
-        alert("Por favor permita ventanas emergentes para ver el reporte.\nPlease allow popups to view the report.");
-      }
-    } catch(err){
-      alert("Error al abrir el reporte: "+err.message);
-    }
-  });
-});
-
 }
 
-/* SEND */
+/* ------------------------------------------------ */
+/* SEND                                             */
+/* ------------------------------------------------ */
 
 async function sendMsg(){
 
@@ -361,8 +380,6 @@ if(!text) return;
 
 detectLang(text);
 
-note.innerHTML=t("note");
-
 addUser(text);
 
 input.value="";
@@ -370,26 +387,25 @@ input.value="";
 /* GREETING */
 
 if(isGreeting(text)){
-
 addBot(t("greeting"));
-
 return;
-
 }
 
 /* LOADER */
 
-const row=document.createElement("div");
-row.className="row";
-row.id="loader";
+const loader=document.createElement("div");
+loader.className="row";
+loader.id="loader";
 
-row.innerHTML=`
+loader.innerHTML=`
 <img class="avatar" src="${avatar}">
-<div class="msg bot loader" id="loaderText"><div class="cira-spinner"></div><span class="cira-loader-text">${t("processing")}</span></div>
+<div class="msg bot loader" id="loaderText">
+<div class="cira-spinner"></div>
+<span>${t("processing")}</span>
+</div>
 `;
 
-msgs.appendChild(row);
-
+msgs.appendChild(loader);
 msgs.scrollTop=msgs.scrollHeight;
 
 /* SLOW MESSAGE */
@@ -399,9 +415,7 @@ const slowTimer=setTimeout(()=>{
 const l=document.getElementById("loaderText");
 
 if(l){
-
 l.innerHTML+=`<br><br>${t("slow")}`;
-
 }
 
 },45000);
@@ -413,26 +427,26 @@ try{
 const r=await fetch(webhook,{
 method:"POST",
 headers:{"Content-Type":"application/json"},
-body:JSON.stringify({chatInput:text,sessionId:sid})
+body:JSON.stringify({
+chatInput:text,
+sessionId:sid
+})
 });
 
 clearTimeout(slowTimer);
 
 const data=await r.json();
 
+const ld=document.getElementById("loader");
+if(ld) ld.remove();
+
 let reply="";
 
 if(Array.isArray(data)){
-
 reply=data[0]?.output || data[0]?.text;
-
 }else{
-
 reply=data.output || data.text;
-
 }
-
-document.getElementById("loader").remove();
 
 addBot(reply || "No response");
 
@@ -440,7 +454,8 @@ addBot(reply || "No response");
 
 clearTimeout(slowTimer);
 
-document.getElementById("loader").remove();
+const ld=document.getElementById("loader");
+if(ld) ld.remove();
 
 addBot("Connection error");
 
@@ -448,34 +463,18 @@ addBot("Connection error");
 
 }
 
-/* EVENTS */
+/* ------------------------------------------------ */
+/* EVENTS                                           */
+/* ------------------------------------------------ */
 
 send.onclick=sendMsg;
 
 input.addEventListener("keypress",e=>{
-
-if(e.key==="Enter"&&!e.shiftKey){
-
+if(e.key==="Enter" && !e.shiftKey){
 e.preventDefault();
-
 sendMsg();
-
 }
-
 });
 
 }
-
-/* INIT */
-
-if(document.readyState==="loading"){
-
-document.addEventListener("DOMContentLoaded",initWidget);
-
-}else{
-
-initWidget();
-
-}
-
 })();
