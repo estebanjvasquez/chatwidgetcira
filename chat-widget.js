@@ -2,21 +2,18 @@
 "use strict";
 
 /* ------------------------------------------------ */
-/* SAFE INIT FOR WORDPRESS                          */
+/* SAFE INIT                                        */
 /* ------------------------------------------------ */
 
 function ready(fn){
-if(document.readyState !== "loading"){
-fn();
-}else{
-document.addEventListener("DOMContentLoaded",fn);
-}
+if(document.readyState !== "loading"){ fn(); }
+else{ document.addEventListener("DOMContentLoaded",fn); }
 }
 
 ready(initWidget);
 
 /* ------------------------------------------------ */
-/* MAIN INIT                                        */
+/* INIT                                             */
 /* ------------------------------------------------ */
 
 function initWidget(){
@@ -25,37 +22,33 @@ if(document.getElementById("n8n-chat-widget")) return;
 
 const config = window.ChatWidgetConfig || {};
 const webhook = config.webhookUrl || "";
-const avatar = config.avatar || "https://camarapetrolera.app/public/images/cirabot.png";
+const avatar = config.avatar || "";
 
-let lang = null;
+let lang = navigator.language && navigator.language.startsWith("es") ? "es" : "en";
 
 /* ------------------------------------------------ */
-/* LANGUAGE DETECTION                               */
+/* LANGUAGE DETECTION FROM USER INPUT               */
 /* ------------------------------------------------ */
 
 function detectLang(text){
 
-if(lang) return lang;
-
-if(/hola|buscar|empresa|empresas|servicio|servicios|gracias|saludos|buenas/i.test(text)){
+if(/hola|empresa|empresas|servicio|servicios|gracias|buscar|buenas/i.test(text)){
 lang="es";
-}else{
+}
+
+if(/hello|hi|services|company|companies|search/i.test(text)){
 lang="en";
 }
 
 updateNote();
-
-return lang;
 }
 
 /* ------------------------------------------------ */
-/* GREETING DETECTOR                                */
+/* GREETING                                         */
 /* ------------------------------------------------ */
 
 function isGreeting(text){
-
-return /^(hola|hi|hello|hey|saludos|buenas)\b/i.test(text.trim());
-
+return /^(hola|hello|hi|hey|buenas)/i.test(text.trim());
 }
 
 /* ------------------------------------------------ */
@@ -72,8 +65,8 @@ en:"I'm processing your request..."
 },
 
 slow:{
-es:"La consulta está tardando más de lo esperado. Algunas búsquedas en la base de datos pueden tomar hasta 1 minuto.",
-en:"This search is taking longer than expected. Some database queries may take up to a minute."
+es:"La consulta está tardando más de lo esperado. Algunas búsquedas pueden tardar hasta un minuto.",
+en:"This search is taking longer than expected. Some queries may take up to a minute."
 },
 
 note:{
@@ -82,9 +75,10 @@ en:"Note: Detailed searches and PDF generation may take a few seconds."
 },
 
 greeting:{
-es:`Hola! Soy CIRA, asistente virtual de la Cámara Petrolera de Venezuela.<br><br>
+es:`¡Hola! Soy CIRA, asistente virtual de la Cámara Petrolera de Venezuela.<br><br>
 Puedo ayudarte a encontrar empresas afiliadas, servicios y datos de contacto.<br><br>
 ¿Qué necesitas buscar hoy?`,
+
 en:`Hello! I'm CIRA, the virtual assistant of the Venezuelan Petroleum Chamber.<br><br>
 I can help you find member companies, services and contact information.<br><br>
 What would you like to search for today?`
@@ -92,12 +86,11 @@ What would you like to search for today?`
 
 };
 
-return dict[key][lang || "es"];
-
+return dict[key][lang];
 }
 
 /* ------------------------------------------------ */
-/* CSS                                              */
+/* STYLE                                            */
 /* ------------------------------------------------ */
 
 const style=document.createElement("style");
@@ -134,9 +127,7 @@ overflow:hidden;
 z-index:99999;
 }
 
-.n8n-chat-window.open{
-display:flex;
-}
+.n8n-chat-window.open{display:flex;}
 
 .n8n-chat-body{
 flex:1;
@@ -165,7 +156,6 @@ color:white;
 .bot{
 background:white;
 border:1px solid #ddd;
-color:#333;
 }
 
 .row{
@@ -177,27 +167,6 @@ gap:8px;
 width:28px;
 height:28px;
 border-radius:50%;
-}
-
-.loader{
-font-style:italic;
-color:#777;
-display:flex;
-align-items:center;
-gap:8px;
-}
-
-.cira-spinner{
-width:14px;
-height:14px;
-border:2.5px solid #faa819;
-border-top-color:transparent;
-border-radius:50%;
-animation:cira-spin 0.75s linear infinite;
-}
-
-@keyframes cira-spin{
-to{transform:rotate(360deg)}
 }
 
 .note{
@@ -233,7 +202,26 @@ color:white;
 cursor:pointer;
 }
 
-@media (max-width:480px){
+.loader{
+font-style:italic;
+color:#777;
+display:flex;
+align-items:center;
+gap:8px;
+}
+
+.spinner{
+width:14px;
+height:14px;
+border:2px solid #faa819;
+border-top-color:transparent;
+border-radius:50%;
+animation:spin .8s linear infinite;
+}
+
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@media(max-width:480px){
 .n8n-chat-window{
 width:100%;
 right:0;
@@ -261,27 +249,20 @@ document.body.insertAdjacentHTML("beforeend",`
 <div id="msgs" class="n8n-chat-body">
 
 <div style="text-align:center">
-
 <img src="${avatar}" style="width:60px;border-radius:50%;margin-bottom:10px">
-
 <div>¡Hola! Soy CIRA</div>
-
 </div>
-
-</div>
-
-<div class="footer">
-
-<textarea id="input" placeholder="Escribe tu consulta..."></textarea>
-
-<button id="send" class="send">➤</button>
 
 </div>
 
 <div id="note" class="note"></div>
 
+<div class="footer">
+<textarea id="input" placeholder="Escribe tu consulta..."></textarea>
+<button id="send" class="send">➤</button>
 </div>
 
+</div>
 </div>
 
 `);
@@ -327,7 +308,6 @@ updateNote();
 function linkify(text){
 
 text=text.replace(/\n/g,"<br>");
-text=text.replace(/\/n/g,"<br>");
 
 text=text.replace(
 /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)/g,
@@ -340,7 +320,6 @@ text=text.replace(
 );
 
 return text;
-
 }
 
 function addUser(text){
@@ -351,7 +330,6 @@ d.innerHTML=text;
 
 msgs.appendChild(d);
 msgs.scrollTop=msgs.scrollHeight;
-
 }
 
 function addBot(text){
@@ -366,7 +344,6 @@ row.innerHTML=`
 
 msgs.appendChild(row);
 msgs.scrollTop=msgs.scrollHeight;
-
 }
 
 /* ------------------------------------------------ */
@@ -384,7 +361,7 @@ addUser(text);
 
 input.value="";
 
-/* GREETING */
+/* GREETING WITHOUT AI */
 
 if(isGreeting(text)){
 addBot(t("greeting"));
@@ -400,13 +377,12 @@ loader.id="loader";
 loader.innerHTML=`
 <img class="avatar" src="${avatar}">
 <div class="msg bot loader" id="loaderText">
-<div class="cira-spinner"></div>
+<div class="spinner"></div>
 <span>${t("processing")}</span>
 </div>
 `;
 
 msgs.appendChild(loader);
-msgs.scrollTop=msgs.scrollHeight;
 
 /* SLOW MESSAGE */
 
@@ -420,7 +396,7 @@ l.innerHTML+=`<br><br>${t("slow")}`;
 
 },45000);
 
-/* CALL MODEL */
+/* CALL N8N */
 
 try{
 
@@ -448,6 +424,23 @@ reply=data[0]?.output || data[0]?.text;
 reply=data.output || data.text;
 }
 
+/* PDF AUTO OPEN */
+
+const pdfMatch = reply && reply.match(/https?:\/\/[^\s]+\.pdf/i);
+
+if(pdfMatch){
+
+window.open(pdfMatch[0],"_blank");
+
+addBot(
+lang==="es"
+?"He generado el PDF solicitado. Se abrirá en una nueva ventana."
+:"Your PDF is ready. It will open in a new window."
+);
+
+return;
+}
+
 addBot(reply || "No response");
 
 }catch(e){
@@ -457,7 +450,7 @@ clearTimeout(slowTimer);
 const ld=document.getElementById("loader");
 if(ld) ld.remove();
 
-addBot("Connection error");
+addBot(lang==="es"?"Error de conexión":"Connection error");
 
 }
 
@@ -477,4 +470,5 @@ sendMsg();
 });
 
 }
+
 })();
