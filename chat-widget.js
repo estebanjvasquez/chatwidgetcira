@@ -55,7 +55,7 @@ const dict={
     en:"I'm processing your request..."
   },
   slow:{
-    es:"La consulta está tardando más de lo esperado. Algunas búsquedas pueden tardar hasta un minuto.",
+    es:"La consulta está tardando más de lo esperado. Algunas búsquedas pueden tardar mas de un minuto.",
     en:"This search is taking longer than expected. Some queries may take up to a minute."
   },
   note:{
