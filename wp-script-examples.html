@@ -1,0 +1,77 @@
+<!-- ============================================================ -->
+<!-- CIRA CHAT WIDGET — WordPress Script Examples               -->
+<!-- Place in: Appearance → Theme Editor → header.php           -->
+<!-- OR use a "Custom HTML" block / a plugin like "Insert Headers and Footers" -->
+<!-- ============================================================ -->
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     OPCIÓN 1: MODO BURBUJA  (bubble)
+     Comportamiento actual: botón flotante en la esquina inferior
+     derecha que abre un panel superpuesto sobre la página.
+     No requiere ningún bloque especial en el editor de WP.
+     ══════════════════════════════════════════════════════════════ -->
+<script>
+window.ChatWidgetConfig = {
+
+  /* ── Conexión ─────────────────────────────────────── */
+  webhookUrl: "https://vmi2945958.contaboserver.net/webhook/cira-botV2",
+  avatar:     "https://camarapetrolera.app/public/images/cirabot.png",
+
+  /* ── Modo de presentación ─────────────────────────── */
+  mode: "bubble",          // "bubble" | "inline"
+  // mountSelector no se usa en modo bubble — se puede omitir
+
+  /* ── Identidad (opcional, referencia) ─────────────── */
+  branding: { name: "CIRA Asistente - CPV" },
+
+  /* ── Colores — el widget los aplica internamente ───── */
+  style: { primaryColor: "#faa819" }
+
+};
+</script>
+<script src="https://cdn.jsdelivr.net/gh/estebanjvasquez/chatwidgetcira@main/chat-widget.js?v=10" async></script>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     OPCIÓN 2: MODO INTEGRADO  (inline)
+     El chat se incrusta dentro de un bloque del editor de WP.
+     El tamaño del chat es exactamente el tamaño del bloque.
+
+     Pasos en el editor de WordPress:
+       1. Insertar un bloque "HTML Personalizado" (o un bloque vacío
+          de Grupo/Columna) en la posición deseada de la página.
+       2. Darle un ID CSS al bloque: en el panel derecho →
+          "Configuración avanzada" → "Clase o ID de CSS adicional"
+          escribir:  #cira-chat
+          (o cualquier selector; ese mismo valor va en mountSelector)
+       3. Definir la altura del bloque en el editor:
+          En "Dimensiones" del bloque poner, por ejemplo: alto 600px
+       4. Publicar. El widget detecta el elemento y lo ocupa por completo.
+
+     IMPORTANTE: el bloque debe tener altura definida.
+     El widget se adapta al 100% del ancho y alto del contenedor.
+     ══════════════════════════════════════════════════════════════ -->
+<!--
+<script>
+window.ChatWidgetConfig = {
+
+  // ── Conexión ──────────────────────────────────────────
+  webhookUrl: "https://vmi2945958.contaboserver.net/webhook/cira-botV2",
+  avatar:     "https://camarapetrolera.app/public/images/cirabot.png",
+
+  // ── Modo de presentación ──────────────────────────────
+  mode:          "inline",       // activa modo integrado
+  mountSelector: "#cira-chat",   // selector CSS del bloque WP que actúa como contenedor
+                                 // debe coincidir con el ID/clase asignado al bloque
+
+  // ── Identidad (opcional, referencia) ──────────────────
+  branding: { name: "CIRA Asistente - CPV" },
+
+  // ── Colores — el widget los aplica internamente ────────
+  style: { primaryColor: "#faa819" }
+
+};
+</script>
+<script src="https://cdn.jsdelivr.net/gh/estebanjvasquez/chatwidgetcira@main/chat-widget.js?v=10" async></script>
+-->
