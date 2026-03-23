@@ -1,15 +1,21 @@
 <!-- ============================================================ -->
-<!-- CIRA CHAT WIDGET — WordPress Script Examples               -->
-<!-- Place in: Appearance → Theme Editor → header.php           -->
-<!-- OR use a "Custom HTML" block / a plugin like "Insert Headers and Footers" -->
+<!-- CIRA CHAT WIDGET — Scripts de configuración para WordPress  -->
+<!--                                                            -->
+<!-- Dónde pegar estos scripts en WP + Divi:                    -->
+<!--   Divi → Opciones del tema → Integración →                 -->
+<!--   sección "Añadir código a la sección <head> de su blog"   -->
+<!--   Pegar el bloque <script> completo de la opción elegida.  -->
+<!--                                                            -->
+<!--   Alternativa: plugin "Insert Headers and Footers"         -->
+<!--   (sección Header)                                         -->
 <!-- ============================================================ -->
 
 
 <!-- ══════════════════════════════════════════════════════════════
      OPCIÓN 1: MODO BURBUJA  (bubble)
-     Comportamiento actual: botón flotante en la esquina inferior
-     derecha que abre un panel superpuesto sobre la página.
-     No requiere ningún bloque especial en el editor de WP.
+     Botón flotante en la esquina inferior derecha que abre un
+     panel superpuesto sobre la página.
+     No requiere ningún módulo ni sección especial en Divi.
      ══════════════════════════════════════════════════════════════ -->
 <script>
 window.ChatWidgetConfig = {
@@ -34,23 +40,84 @@ window.ChatWidgetConfig = {
 
 
 <!-- ══════════════════════════════════════════════════════════════
-     OPCIÓN 2: MODO INTEGRADO  (inline)
-     El chat se incrusta dentro de un bloque del editor de WP.
-     El tamaño del chat es exactamente el tamaño del bloque.
+     OPCIÓN 2: MODO INTEGRADO  (inline) — con DIVI Builder
+     El chat se incrusta dentro de un módulo de Divi.
+     El alto del módulo en el editor de Divi controla el tamaño.
 
-     Pasos en el editor de WordPress:
-       1. Insertar un bloque "HTML Personalizado" (o un bloque vacío
-          de Grupo/Columna) en la posición deseada de la página.
-       2. Darle un ID CSS al bloque: en el panel derecho →
-          "Configuración avanzada" → "Clase o ID de CSS adicional"
-          escribir:  #cira-chat
-          (o cualquier selector; ese mismo valor va en mountSelector)
-       3. Definir la altura del bloque en el editor:
-          En "Dimensiones" del bloque poner, por ejemplo: alto 600px
-       4. Publicar. El widget detecta el elemento y lo ocupa por completo.
+     ── PASOS EN EL DIVI BUILDER ──────────────────────────────────
 
-     IMPORTANTE: el bloque debe tener altura definida.
-     El widget se adapta al 100% del ancho y alto del contenedor.
+     1. CREAR EL CONTENEDOR EN DIVI
+        En la página donde quieres el chat, abre el Divi Builder
+        (botón azul "Usar Divi Builder" o "Activar Visual Builder").
+
+        Opción A — Módulo Código (recomendada, más directa):
+          • Añade una nueva Sección → Fila de 1 columna.
+          • Dentro de la fila, haz clic en el ícono "+" e inserta
+            un módulo "Código" (Code Module).
+          • En el campo de contenido del módulo escribe únicamente:
+              <div id="cira-chat"></div>
+          • En las opciones del módulo → pestaña "Avanzado" →
+            sección "CSS" → campo "ID de CSS" escribe:
+              cira-chat-wrap
+            (esto es solo para identificarlo visualmente en Divi;
+             el ID funcional está en el div interno de arriba)
+
+        Opción B — Módulo Texto u otro módulo de contenido:
+          • Inserta un módulo Texto en la posición deseada.
+          • Haz clic en el ícono de lápiz para editar → cambia
+            al editor de texto plano (pestaña "Texto" en TinyMCE)
+            y escribe únicamente:
+              <div id="cira-chat"></div>
+          • Guarda el módulo.
+
+     2. DEFINIR EL ALTO DEL CONTENEDOR
+        El widget llena el 100 % del alto del contenedor, así que
+        debes fijar un alto explícito.
+
+        • Selecciona el módulo (Código o Texto) → ícono de lápiz.
+        • Pestaña "Avanzado" → sección "CSS personalizado" →
+          campo "CSS principal del elemento" → escribe:
+            height: 600px;
+          (ajusta el valor según necesites, p. ej. 500px, 80vh)
+        • Alternativamente, en la pestaña "Diseño" del módulo,
+          si está disponible la opción "Alto", escríbelo ahí.
+
+        NOTA: Si el módulo está dentro de una Fila, también
+        puedes fijar el alto en la Fila: edita la Fila →
+        "Diseño" → "Alto personalizado" → actívalo y pon el valor.
+
+     3. VERIFICAR EL ID EN EL DOM
+        • Guarda / publica la página y ábrela en el navegador.
+        • Clic derecho sobre la zona donde debe aparecer el chat →
+          "Inspeccionar".
+        • Confirma que existe un elemento <div id="cira-chat">.
+        • Si Divi agregó un wrapper extra, copia el id o class
+          del contenedor más cercano con dimensiones definidas
+          y úsalo como mountSelector en el script (ver paso 4).
+
+     4. AJUSTAR mountSelector SI ES NECESARIO
+        El valor por defecto es "#cira-chat" (el div que escribiste).
+        Si Divi renombra o envuelve el elemento, cambia mountSelector
+        al selector real que viste en el inspector del navegador.
+        Ejemplos habituales en Divi:
+          "#cira-chat"                         → id del div interno (caso normal)
+          ".et_pb_code_inner"                  → clase interna del Code Module
+          "#cira-chat-wrap .et_pb_code_inner"  → selector combinado módulo + inner
+
+     ── NOTA SOBRE EL VISUAL BUILDER ────────────────────────────
+        El widget NO se renderiza dentro del Visual Builder de Divi
+        (el editor de arrastrar y soltar que se abre sobre la página
+        en vivo). Esto es normal: el Visual Builder suspende los
+        scripts externos para no interferir con la edición.
+
+        El widget aparecerá correctamente al:
+          • Ver la página publicada en una pestaña normal del navegador
+          • Usar la vista previa del Backend Builder
+            (Backend Builder → botón ojo "Vista Previa")
+
+        Para verificar el alto del contenedor antes de publicar,
+        usa la Vista Previa del backend o publica la página en
+        modo borrador y revísala en una pestaña separada.
      ══════════════════════════════════════════════════════════════ -->
 <!--
 <script>
@@ -62,8 +129,8 @@ window.ChatWidgetConfig = {
 
   // ── Modo de presentación ──────────────────────────────
   mode:          "inline",       // activa modo integrado
-  mountSelector: "#cira-chat",   // selector CSS del bloque WP que actúa como contenedor
-                                 // debe coincidir con el ID/clase asignado al bloque
+  mountSelector: "#cira-chat",   // selector CSS del div creado en el módulo Divi
+                                 // ajustar si el inspector muestra un selector diferente
 
   // ── Identidad (opcional, referencia) ──────────────────
   branding: { name: "CIRA Asistente - CPV" },
