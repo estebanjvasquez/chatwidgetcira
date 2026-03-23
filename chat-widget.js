@@ -59,8 +59,8 @@ const dict={
     en:"This search is taking longer than expected. Some queries may take up to a minute."
   },
   note:{
-    es:"Nota: La búsqueda detallada y generación de PDFs puede tomar unos segundos.",
-    en:"Note: Detailed searches and PDF generation may take a few seconds."
+    es:"",
+    en:""
   },
   greeting:{
     es:"¡Hola! Soy CIRA, asistente virtual de la Cámara Petrolera de Venezuela.<br><br>Puedo ayudarte a encontrar empresas afiliadas, servicios y datos de contacto.<br><br>¿Qué necesitas buscar hoy?",
