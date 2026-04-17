@@ -39,12 +39,7 @@ function initWidget(){
   }
 
   function isGreeting(text){
-    var t = text.trim();
-    // Solo saludo como palabra completa, maximo 3 palabras
-    // Evita falsos positivos: Holanda, Highland, Buenos Aires, Heyden, etc.
-    var wordCount = t.split(/\s+/).length;
-    if(wordCount > 3) return false;
-    return /^(hola|hello|hi|hey|buenas(\s*(tardes|d\u00edas|noches))?)([\s!\u00a1.,]*)?$/i.test(t);
+    return /^(hola|hello|hi|hey|buenas)/i.test(text.trim());
   }
 
   function t(key){
