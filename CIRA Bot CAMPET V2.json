@@ -1,0 +1,1109 @@
+{
+  "name": "CIRA Bot CAMPET V2",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "admin-pass",
+              "name": "adminPassword",
+              "value": "CIRA2024",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        4720,
+        4896
+      ],
+      "id": "f0b33778-5b73-4f43-aeab-e4d7fe69fd6e",
+      "name": "Admin Password"
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst chatInput = $('Pre-Procesing3').first().json.chatInput.trim();\nconst sessionId = $('Pre-Procesing3').first().json.sessionId;\nconst adminPassword = $('Admin Password').first().json.adminPassword;\n\n// Detect command type\nconst aprender      = chatInput.match(/^\\/aprender\\s+(\\S+)\\s+(\\S+)\\s*:\\s*(.+)$/si);\nconst listar        = /^\\/listar-aprendizajes/i.test(chatInput);\nconst borrar        = chatInput.match(/^\\/borrar-aprendizaje\\s+(\\d+)\\s+(\\S+)/i);\n\nlet commandType = 'NONE';\nlet payload = {};\n\nif (aprender) {\n  const parts = chatInput.match(/^\\/aprender\\s+(\\S+)\\s+(\\S+)\\s*:\\s*(.+)$/si);\n  commandType = 'APRENDER';\n  payload = {\n    password:    parts[1].trim(),\n    categoria:   parts[2].trim().toUpperCase(),\n    instruccion: parts[3].trim()\n  };\n} else if (listar) {\n  const parts = chatInput.match(/^\\/listar-aprendizajes\\s*(\\S+)?/i);\n  commandType = 'LISTAR';\n  payload = { password: parts && parts[1] ? parts[1].trim() : '' };\n} else if (borrar) {\n  commandType = 'BORRAR';\n  payload = {\n    id:       parseInt(borrar[1]),\n    password: borrar[2].trim()\n  };\n}\n\nreturn [{\n  json: {\n    chatInput,\n    sessionId,\n    adminPassword,\n    commandType,\n    payload,\n    isCommand: commandType !== 'NONE'\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4912,
+        4896
+      ],
+      "id": "4528d47e-14e5-4f3f-9d68-6eeca856925f",
+      "name": "Detect Command"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "is-command",
+              "leftValue": "={{ $json.isCommand }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        5120,
+        4896
+      ],
+      "id": "ed0273e0-db4f-4e43-a86c-340adf6c1a89",
+      "name": "Is Command?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "pass-check",
+              "leftValue": "={{ $json.payload.password }}",
+              "rightValue": "={{ $json.adminPassword }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        5312,
+        4672
+      ],
+      "id": "2cb1e96c-5cfd-436c-9f12-c908c5285bd4",
+      "name": "Validate Password"
+    },
+    {
+      "parameters": {
+        "jsCode": "\nreturn [{ json: {\n  output: '<div style=\"font-family:sans-serif;padding:14px 18px;border-left:4px solid #e53e3e;border-radius:6px;background:#fff5f5;font-size:14px;color:#333\">'\n        + '<strong>&#128274; Clave incorrecta</strong><br>'\n        + '<span style=\"font-size:13px;color:#666\">El comando no fue ejecutado.</span>'\n        + '</div>',\n  type: 'conversation'\n}}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5520,
+        4832
+      ],
+      "id": "cae59392-7d5b-43fd-94b6-8e24714decb7",
+      "name": "Wrong Password"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        5712,
+        4832
+      ],
+      "id": "a03a19c2-872e-49c9-9c83-33dea7af2b05",
+      "name": "Respond Wrong Password"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.commandType }}",
+                    "rightValue": "APRENDER",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "aprender"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.commandType }}",
+                    "rightValue": "LISTAR",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "listar"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.commandType }}",
+                    "rightValue": "BORRAR",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "borrar"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        5520,
+        4672
+      ],
+      "id": "4a092c2f-546d-4675-9692-a0df7cebb36b",
+      "name": "Route Command"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO agent_learnings (categoria, instruccion, activo) VALUES ('{{ $json.payload.categoria }}', '{{ $json.payload.instruccion.replace(/'/g, \"''\") }}', 1) RETURNING id",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        5712,
+        4512
+      ],
+      "id": "45061c1a-43bb-4209-8f7a-ab32140d0a76",
+      "name": "INSERT Learning",
+      "credentials": {
+        "postgres": {
+          "id": "ENVCUL4fXzhWWdRN",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst id = ($input.first().json.id || $input.first().json[0]?.id || '?');\nconst categoria = $('Detect Command').first().json.payload.categoria;\nconst instruccion = $('Detect Command').first().json.payload.instruccion;\n\nreturn [{ json: {\n  output: '<div style=\"font-family:sans-serif;padding:14px 18px;border-left:4px solid #faa819;border-radius:6px;background:#fff8ee;font-size:14px;color:#333\">'\n        + '<strong>&#9989; Aprendizaje guardado</strong> <span style=\"font-size:12px;color:#888\">#' + id + '</span><br><br>'\n        + '<span style=\"font-size:12px;background:#faa81920;border-radius:4px;padding:2px 8px;color:#7a5800\">' + categoria + '</span><br><br>'\n        + '<span style=\"color:#444\">' + instruccion + '</span>'\n        + '</div>',\n  type: 'conversation'\n}}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5920,
+        4512
+      ],
+      "id": "f5ec97bc-6bb9-4bff-a87a-eddc0302b1f1",
+      "name": "Format Save OK"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        6112,
+        4512
+      ],
+      "id": "e6d6b98b-3cee-43e9-aa21-53b4dd8a2862",
+      "name": "Respond Save OK"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, categoria, instruccion, creado_en FROM agent_learnings WHERE activo = 1 ORDER BY id ASC",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        5712,
+        4672
+      ],
+      "id": "5e09fbc0-995e-499e-9dfb-6d535e7f6582",
+      "name": "SELECT Learnings List",
+      "credentials": {
+        "postgres": {
+          "id": "ENVCUL4fXzhWWdRN",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst rows = $input.all().map(i => i.json);\nconst GOLD = '#faa819';\n\nif (rows.length === 0 || (rows.length === 1 && Object.keys(rows[0]).length === 0)) {\n  return [{ json: {\n    output: '<div style=\"font-family:sans-serif;padding:14px 18px;border-left:4px solid #faa819;border-radius:6px;background:#fff8ee;font-size:14px;color:#333\">'\n          + '&#128218; No hay aprendizajes guardados aún.</div>',\n    type: 'conversation'\n  }}];\n}\n\nlet items = '';\nrows.forEach(function(r) {\n  const fecha = r.creado_en ? new Date(r.creado_en).toLocaleDateString('es-VE') : '';\n  items += '<div style=\"padding:10px 12px;border:0.5px solid #e8e8e8;border-radius:6px;margin-bottom:6px;background:#fff\">'\n         + '<div style=\"display:flex;align-items:center;gap:8px;margin-bottom:4px\">'\n         + '<span style=\"font-size:11px;font-weight:600;background:#faa81920;color:#7a5800;padding:2px 8px;border-radius:20px\">' + r.categoria + '</span>'\n         + '<span style=\"font-size:11px;color:#aaa;margin-left:auto\">#' + r.id + ' · ' + fecha + '</span>'\n         + '</div>'\n         + '<div style=\"font-size:13px;color:#444\">' + r.instruccion + '</div>'\n         + '<div style=\"font-size:11px;color:#aaa;margin-top:4px\">Para borrar: /borrar-aprendizaje ' + r.id + ' [clave]</div>'\n         + '</div>';\n});\n\nreturn [{ json: {\n  output: '<div style=\"font-family:sans-serif;max-width:680px\">'\n        + '<div style=\"padding:10px 14px;background:#fff8ee;border-left:4px solid ' + GOLD + ';border-radius:6px;margin-bottom:12px;font-size:13px;color:#333\">'\n        + '&#128218; <strong>' + rows.length + '</strong> aprendizaje(s) activo(s):</div>'\n        + items + '</div>',\n  type: 'conversation'\n}}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5920,
+        4672
+      ],
+      "id": "21562a36-afab-4839-9f40-4c18365be167",
+      "name": "Format Learnings List"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        6112,
+        4672
+      ],
+      "id": "fe78bbdb-4248-4968-a0b7-5e9939c6ba4a",
+      "name": "Respond List"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE agent_learnings SET activo = 0 WHERE id = {{ $json.payload.id }} RETURNING id",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        5712,
+        4832
+      ],
+      "id": "0a30c763-3e46-41c3-a60c-c7e354f106b5",
+      "name": "UPDATE Disable Learning",
+      "credentials": {
+        "postgres": {
+          "id": "ENVCUL4fXzhWWdRN",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst id = $('Detect Command').first().json.payload.id;\nreturn [{ json: {\n  output: '<div style=\"font-family:sans-serif;padding:14px 18px;border-left:4px solid #faa819;border-radius:6px;background:#fff8ee;font-size:14px;color:#333\">'\n        + '&#128465; Aprendizaje <strong>#' + id + '</strong> desactivado correctamente.'\n        + '</div>',\n  type: 'conversation'\n}}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5920,
+        4832
+      ],
+      "id": "6d313c21-a392-4053-8a8c-22375d54c9e9",
+      "name": "Format Delete OK"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        6112,
+        4832
+      ],
+      "id": "1fced57b-5678-44cd-95d7-79e473ab9bdf",
+      "name": "Respond Delete OK"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT categoria, instruccion FROM agent_learnings WHERE activo = 1 ORDER BY id ASC",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        5312,
+        5072
+      ],
+      "id": "d78d27b2-22a1-4674-8b82-d4550e6886b4",
+      "name": "Load Learnings",
+      "credentials": {
+        "postgres": {
+          "id": "ENVCUL4fXzhWWdRN",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst rows = $input.all().map(i => i.json);\nconst sessionId = $('Pre-Procesing3').first().json.sessionId;\nconst chatInput = $('Pre-Procesing3').first().json.chatInput;\n\nconst basePrompt = `Eres el Asistente de Búsqueda de CIRA (Cámara Petrolera de Venezuela).\nAyudas a los usuarios a encontrar empresas afiliadas en nuestra base de datos.\n\n== ESQUEMA DE LA BASE DE DATOS ==\nVista: ChatView\nColumnas disponibles: name, Sector, Servicios, state, CIUDAD, phone, rif, street, website\n\nIMPORTANTE SOBRE Sector y Servicios:\n- Ambas columnas pueden contener MÚLTIPLES valores separados por coma en una sola celda.\n  Ejemplo Sector: 'CONSTRUCCIÓN, OPERADORES, FABRICANTES'\n  Ejemplo Servicios: 'Perforación, Cementación, Completación'\n- Por esto SIEMPRE debes usar LIKE para buscar en Sector y Servicios, NUNCA uses =\n- Una empresa aparece si el término buscado está contenido en cualquier parte del campo.\n\n== TOOLS DISPONIBLES ==\nTienes dos tools que DEBES usar antes de construir cualquier WHERE sobre Sector o Servicios:\n1. Catalog Sectores — devuelve todos los sectores existentes en el sistema.\n2. Catalog Servicios — devuelve todos los servicios existentes en el sistema.\n\nCUÁNDO USAR LOS TOOLS:\n- Cuando el usuario mencione algo relacionado con un sector → consulta Catalog Sectores.\n- Cuando el usuario mencione un servicio → consulta Catalog Servicios.\n- Si no estás seguro si es sector o servicio → consulta AMBOS tools.\n- Si el usuario pregunta explícitamente qué sectores o servicios existen → consulta el tool correspondiente y responde en texto, NO generes JSON.\n\n== COMPORTAMIENTO ==\n\nCASO A — Saludo, vago o sin criterios:\n  Responde en texto amigable. Pregunta qué sector, servicio, empresa o ciudad busca.\n\nCASO B — Criterio ambiguo o término que no coincide exactamente:\n  USA los tools de catálogo para encontrar el match más cercano.\n  Si el catálogo tiene un valor similar, úsalo directamente en el WHERE sin preguntar.\n  Solo pide aclaración si después de consultar el catálogo sigue siendo ambiguo.\n\nCASO C — Criterio claro y confirmado con el catálogo:\n  Responde SOLO con el JSON en UNA SOLA LÍNEA. Sin texto antes ni después.\n\n== REGLA CRÍTICA DE FORMATO JSON ==\n- UNA SOLA LÍNEA. Sin saltos de línea dentro del JSON.\n- SIN markdown. Nunca uses \\`\\`\\`json ni \\`\\`\\` ni ningún bloque de código.\n- Las claves NO pueden tener saltos de línea.\n\n== REGLAS SQL — CRÍTICO ==\n1. Sector (multi-valor, SIEMPRE LIKE):\n   LOWER(Sector) LIKE LOWER('%construcción%')\n   NUNCA uses: Sector = 'CONSTRUCCIÓN'\n\n2. Servicios (multi-valor, SIEMPRE LIKE):\n   LOWER(Servicios) LIKE LOWER('%perforación%')\n   NUNCA uses: Servicios = 'Perforación'\n\n3. Ciudad (texto libre, SIEMPRE LIKE):\n   LOWER(CIUDAD) LIKE LOWER('%maracaibo%')\n\n4. Nombre de empresa (búsqueda aproximada, SIEMPRE LIKE):\n   LOWER(name) LIKE LOWER('%pdvsa%')\n\n5. RIF (único caso de igualdad exacta):\n   rif = 'J123456789'\n\n6. Estado:\n   LOWER(state) LIKE LOWER('%zulia%')\n\n7. Múltiples criterios: usar AND\n8. Prohibido: subconsultas, JOINs, DROP, DELETE, UPDATE, INSERT, TRUNCATE\n\n== FORMATO JSON DE SALIDA ==\n{\"whereClause\":\"<SQL sin la palabra WHERE>\",\"queryIntent\":\"<SECTOR|SERVICE|COMPANY|RIF|CITY|MIXED>\",\"hasFilter\":true,\"needsClarification\":false,\"isSearchReady\":true,\"humanSummary\":\"<descripción breve>\"}\n\n== EJEMPLOS EXACTOS ==\n\nUsuario: empresas de construcción en maracaibo\n[Consulta Catalog Sectores → encuentra 'CONSTRUCCIÓN']\nRespuesta: {\"whereClause\":\"LOWER(Sector) LIKE LOWER('%construcción%') AND LOWER(CIUDAD) LIKE LOWER('%maracaibo%')\",\"queryIntent\":\"MIXED\",\"hasFilter\":true,\"needsClarification\":false,\"isSearchReady\":true,\"humanSummary\":\"Construcción en Maracaibo\"}\n\nUsuario: perforación\n[Consulta Catalog Servicios → encuentra 'Perforación']\nRespuesta: {\"whereClause\":\"LOWER(Servicios) LIKE LOWER('%perforación%')\",\"queryIntent\":\"SERVICE\",\"hasFilter\":true,\"needsClarification\":false,\"isSearchReady\":true,\"humanSummary\":\"Empresas con servicio de Perforación\"}\n\nUsuario: operadores\n[Consulta Catalog Sectores → encuentra 'OPERADORES']\nRespuesta: {\"whereClause\":\"LOWER(Sector) LIKE LOWER('%operadores%')\",\"queryIntent\":\"SECTOR\",\"hasFilter\":true,\"needsClarification\":false,\"isSearchReady\":true,\"humanSummary\":\"Empresas del sector Operadores\"}\n\nUsuario: hola\nRespuesta: ¡Hola! Soy el asistente de CIRA. ¿Qué tipo de empresa o servicio estás buscando? Puedo buscar por sector, servicio, ciudad, nombre o RIF.`;\n\n// Inject learnings if any\nlet learningsSection = '';\nconst validRows = rows.filter(r => r.instruccion);\nif (validRows.length > 0) {\n  learningsSection = '\\n\\n== APRENDIZAJES Y CORRECCIONES ACTIVAS ==\\n'\n    + 'Las siguientes instrucciones han sido aprendidas de experiencias previas.\\n'\n    + 'DEBES seguirlas con prioridad sobre cualquier regla general anterior:\\n';\n  validRows.forEach(function(r, i) {\n    learningsSection += (i + 1) + '. [' + r.categoria + '] ' + r.instruccion + '\\n';\n  });\n}\n\nreturn [{\n  json: {\n    chatInput,\n    sessionId,\n    systemPrompt: basePrompt + learningsSection,\n    learningsCount: validRows.length\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5520,
+        5072
+      ],
+      "id": "362731a0-65b3-4466-a592-486cea49260d",
+      "name": "Build System Prompt"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "cira-botV2",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        4320,
+        4896
+      ],
+      "id": "4569684e-9363-42f2-8f39-fae643b037f5",
+      "name": "Webhook1",
+      "webhookId": "2c82ae40-38e9-415f-a22f-271f846acbde"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.item.json.body || {};\nconst chatInput = body.chatInput || body.message || '';\nconst sessionId = body.sessionId || body.session_id || 'no-session-id';\nreturn { json: { chatInput, sessionId } };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4512,
+        4896
+      ],
+      "id": "5077b413-91f7-4064-829a-542fe8fef0ea",
+      "name": "Pre-Procesing3"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "={{ $('Build System Prompt').first().json.systemPrompt }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        5712,
+        5072
+      ],
+      "id": "c7d04701-567a-4348-949a-f42bd47200e2",
+      "name": "Interactive Intent Agent3"
+    },
+    {
+      "parameters": {
+        "options": {
+          "temperature": 0.1
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        5632,
+        5280
+      ],
+      "id": "71fab262-9df4-4633-ba55-06b4a1373be9",
+      "name": "Google Gemini Chat Model5",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "AVBzCxKUEcj6pnBN",
+          "name": "Google Gemini(PaLM) Campet"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Pre-Procesing3').item.json.sessionId }}_intent",
+        "tableName": "chat_memory"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        5792,
+        5280
+      ],
+      "id": "668bb199-7e7a-4925-9425-bd018e7404ad",
+      "name": "Postgres Memory Intent3",
+      "credentials": {
+        "postgres": {
+          "id": "ENVCUL4fXzhWWdRN",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Consulta el catálogo completo de SECTORES registrados en el sistema CIRA.",
+        "operation": "select",
+        "table": {
+          "__rl": true,
+          "value": "sectors",
+          "mode": "list",
+          "cachedResultName": "sectors"
+        },
+        "returnAll": true,
+        "sort": {
+          "values": [
+            {
+              "column": "name"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySqlTool",
+      "typeVersion": 2.5,
+      "position": [
+        5952,
+        5280
+      ],
+      "id": "aa75342e-f3e3-4875-bfb3-03617088f3f0",
+      "name": "Catalog Sectores2",
+      "credentials": {
+        "mySql": {
+          "id": "rV49Noas0cPLJHOy",
+          "name": "MySQL Campet"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Consulta el catálogo completo de SERVICIOS registrados en el sistema CIRA.",
+        "operation": "select",
+        "table": {
+          "__rl": true,
+          "value": "services",
+          "mode": "list",
+          "cachedResultName": "services"
+        },
+        "returnAll": true,
+        "sort": {
+          "values": [
+            {
+              "column": "name"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySqlTool",
+      "typeVersion": 2.5,
+      "position": [
+        5952,
+        5392
+      ],
+      "id": "04ebc2de-8d78-4e21-90e1-ba50f33f298a",
+      "name": "Catalog Servicios2",
+      "credentials": {
+        "mySql": {
+          "id": "rV49Noas0cPLJHOy",
+          "name": "MySQL Campet"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rawOutput = $input.item.json.output || '';\n\nlet cleaned = rawOutput\n  .replace(/```(?:json)?\\s*/gi, '')\n  .replace(/```\\s*/g, '')\n  .trim();\n\ncleaned = cleaned.replace(/\"([^\"\\\\]*(?:\\\\.[^\"\\\\]*)*)\"\\s*:/g, (match, key) => {\n  const cleanKey = key.replace(/[\\n\\r]/g, '');\n  return '\"' + cleanKey + '\":';\n});\n\nconst braceStart = cleaned.indexOf('{');\nconst braceEnd = cleaned.lastIndexOf('}');\nlet parsed = null;\n\nif (braceStart !== -1 && braceEnd > braceStart) {\n  const jsonCandidate = cleaned.substring(braceStart, braceEnd + 1);\n  try {\n    parsed = JSON.parse(jsonCandidate);\n  } catch(e) {\n    const extract = (key) => {\n      const r = new RegExp('\"' + key + '\"\\\\s*:\\\\s*\"([^\"]+)\"', 'i');\n      const m = jsonCandidate.match(r);\n      return m ? m[1].replace(/[\\n\\r]/g, '').trim() : null;\n    };\n    const extractBool = (key) => {\n      const r = new RegExp('\"' + key + '\"\\\\s*:\\\\s*(true|false)', 'i');\n      const m = jsonCandidate.match(r);\n      return m ? m[1].toLowerCase() === 'true' : false;\n    };\n    const whereClause = extract('whereClause');\n    if (whereClause) {\n      parsed = {\n        whereClause,\n        queryIntent: extract('queryIntent') || 'SERVICE',\n        isSearchReady: extractBool('isSearchReady'),\n        humanSummary: extract('humanSummary') || 'Búsqueda de empresas'\n      };\n    }\n  }\n}\n\nconst isReady = parsed &&\n  parsed.whereClause &&\n  typeof parsed.whereClause === 'string' &&\n  parsed.whereClause.trim().length > 0 &&\n  (parsed.isSearchReady === true || parsed.isSearchReady === 'true');\n\nif (isReady) {\n  let safeWhere = parsed.whereClause.replace(/[\\n\\r]/g, ' ').trim();\n  safeWhere = safeWhere.replace(\n    /\\b(Sector|Servicios)\\s*=\\s*'([^']+)'/gi,\n    (match, col, val) => `LOWER(${col}) LIKE LOWER('%${val}%')`\n  );\n  safeWhere = safeWhere.replace(\n    /\\b(Sector|Servicios)\\s*=\\s*\"([^\"]+)\"/gi,\n    (match, col, val) => `LOWER(${col}) LIKE LOWER('%${val}%')`\n  );\n  return {\n    json: {\n      isSearchReady: 'true',\n      needsClarification: 'false',\n      whereClause: safeWhere,\n      queryIntent: (parsed.queryIntent || 'SERVICE').replace(/[\\n\\r]/g, '').trim(),\n      humanSummary: (parsed.humanSummary || 'Búsqueda de empresas').replace(/[\\n\\r]/g, '').trim()\n    }\n  };\n}\n\nconst conversationalText = cleaned.replace(/\\{[\\s\\S]*\\}/, '').trim() || cleaned;\nreturn {\n  json: {\n    isSearchReady: 'false',\n    needsClarification: 'true',\n    whereClause: null,\n    queryIntent: 'UNKNOWN',\n    humanSummary: null,\n    conversationalText: conversationalText || rawOutput.trim()\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6016,
+        5072
+      ],
+      "id": "4075b800-b352-4ece-a076-893fa0b61275",
+      "name": "Parse Intent JSON3"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "is-search-ready",
+              "leftValue": "={{ String($json.isSearchReady) }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        6192,
+        5072
+      ],
+      "id": "2e53ed84-836b-479e-bc7a-4c8ed056319a",
+      "name": "Is Search Ready?3"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { output: $json.conversationalText || $json.rawOutput, type: 'conversation' } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        6400,
+        5232
+      ],
+      "id": "f2eba015-ec90-4b62-b4ee-c68342280c52",
+      "name": "Respond Conversation5"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT name, Sector, Servicios, state, CIUDAD, phone, rif, street, website FROM ChatView WHERE {{ $json.whereClause }} LIMIT 100",
+        "options": {
+          "queryBatching": "single"
+        }
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.4,
+      "position": [
+        6432,
+        5072
+      ],
+      "id": "1ee63bc3-17a6-4c9e-bbf9-5c4bf8abcca4",
+      "name": "MySQL Query3",
+      "alwaysOutputData": true,
+      "credentials": {
+        "mySql": {
+          "id": "rV49Noas0cPLJHOy",
+          "name": "MySQL Campet"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "3f7f9c5d-f02f-416f-90e3-472f2b7b8b81",
+              "leftValue": "={{ Object.keys($json).length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        6672,
+        5072
+      ],
+      "id": "b238fae1-d32b-4f6d-8c73-1b156d92bb6e",
+      "name": "If2"
+    },
+    {
+      "parameters": {
+        "jsCode": "const html = '<div style=\"font-family:sans-serif;padding:18px 20px;border-left:4px solid #faa819;border-radius:6px;background:#fff8ee;line-height:1.8;font-size:14px\">'\n  + '<div style=\"font-weight:700;font-size:15px;color:#1a1a2e;margin-bottom:10px\">&#128269; No encontramos resultados</div>'\n  + '<div style=\"color:#444;margin-bottom:14px\">No encontramos empresas que coincidan con su búsqueda.</div>'\n  + '<div style=\"color:#555;margin-bottom:10px\">Para más información contacte con la Cámara Petrolera de Venezuela:</div>'\n  + '<div style=\"display:flex;flex-direction:column;gap:8px;color:#444\">'\n  + '<div>&#127760; <a href=\"https://camarapetrolera.org/\" target=\"_blank\">Sitio Web Oficial de la Cámara Petrolera</a></div>'\n  + '<div>&#128231; perfilafiliados@camarapetrolera.org</div>'\n  + '<div>&#128222; +58 212 7941222</div>'\n  + '</div>'\n  + '</div>';\n\nreturn [{ json: { output: html, type: 'conversation' } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6880,
+        4960
+      ],
+      "id": "39a70cf1-ec6d-4465-9854-7442b4189e48",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        7072,
+        4960
+      ],
+      "id": "8f399dcb-e1d1-44c6-8fb3-b1bace585d37",
+      "name": "Respond Conversation6"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows      = $input.all().map(i => i.json);\nconst parseNode = $('Parse Intent JSON3').first().json;\nconst summary   = parseNode.humanSummary || 'Búsqueda de empresas';\nconst intent    = (parseNode.queryIntent || 'MIXED').toUpperCase();\nconst count     = rows.length;\n\nconst GOLD   = '#faa819';\nconst GOLDSM = '#faa81920';\nconst DARK   = 'var(--color-text-primary)';\nconst TEXT   = 'var(--color-text-secondary)';\nconst BG     = 'var(--color-background-primary)';\nconst BGALT  = 'var(--color-background-secondary)';\nconst BORDER = 'var(--color-border-tertiary)';\n\nfunction norm(r) {\n  var raw = String(r.website || r.WEBSITE || '').trim();\n  var web = raw ? (/^https?:\\/\\//i.test(raw) ? raw : 'https://' + raw) : '';\n  return {\n    name:      r.name      || r.NAME      || 'Sin nombre',\n    rif:       r.rif       || r.RIF       || '',\n    sector:    r.Sector    || r.SECTOR    || '',\n    servicios: r.Servicios || r.SERVICIOS || '',\n    ciudad:    r.CIUDAD    || r.ciudad    || '',\n    estado:    r.state     || r.STATE     || '',\n    phone:     r.phone     || r.PHONE     || '',\n    street:    r.street    || r.STREET    || '',\n    website:   web\n  };\n}\n\nfunction chip(icon, text) {\n  if (!text) return '';\n  return '<span style=\"display:inline-flex;align-items:center;gap:4px;background:' + BGALT + ';border-radius:20px;padding:3px 10px;font-size:12px;color:' + TEXT + ';margin:2px 2px 0 0\">' + icon + ' ' + text + '</span>';\n}\nfunction pill(text, bg, color) {\n  if (!text) return '';\n  return '<span style=\"display:inline-block;background:' + bg + ';border-radius:20px;padding:2px 10px;font-size:11px;color:' + color + ';font-weight:500;margin:2px 2px 0 0\">' + text + '</span>';\n}\nfunction sectorPills(str) {\n  if (!str) return '';\n  return str.split(',').map(function(s) { return pill(s.trim(), GOLDSM, '#7a5800'); }).join('');\n}\nfunction serviciosPills(str) {\n  if (!str) return '';\n  return str.split(',').map(function(s) { return pill(s.trim(), 'var(--color-background-info)', 'var(--color-text-info)'); }).join('');\n}\n\nfunction cardFull(c) {\n  var rif   = c.rif    ? chip('&#128196;', 'RIF: ' + c.rif) : '';\n  var tel   = c.phone  ? chip('&#128222;', c.phone) : '';\n  var loc   = c.ciudad ? chip('&#127748;', c.ciudad + (c.estado ? ', ' + c.estado : '')) : '';\n  var addr  = c.street ? '<div style=\"font-size:12px;color:' + TEXT + ';margin-top:6px\">&#128205; ' + c.street + '</div>' : '';\n  var wlink = '';\n  if (c.website) {\n    var lbl = c.website.replace(/^https?:\\/\\//i,'').replace(/\\/$/,'');\n    wlink = '<div style=\"margin-top:6px\"><a href=\"' + c.website + '\" target=\"_blank\" rel=\"noopener\" style=\"color:' + GOLD + ';text-decoration:none;font-size:12px\">&#127760; ' + lbl + '</a></div>';\n  }\n  return '<div style=\"border-left:4px solid ' + GOLD + ';padding:14px 16px;border-radius:0 var(--border-radius-lg) var(--border-radius-lg) 0;background:' + BG + ';border:0.5px solid ' + BORDER + ';border-left:4px solid ' + GOLD + '\"><div style=\"font-weight:500;font-size:15px;color:' + DARK + ';margin-bottom:8px\">&#127970; ' + c.name + '</div>' + (c.sector ? '<div style=\"margin-bottom:5px\">' + sectorPills(c.sector) + '</div>' : '') + (c.servicios ? '<div style=\"margin-bottom:5px\">' + serviciosPills(c.servicios) + '</div>' : '') + '<div style=\"margin-top:6px\">' + loc + tel + rif + '</div>' + addr + wlink + '</div>';\n}\n\nfunction listRow(c, idx) {\n  var safeNameJs = c.name.replace(/'/g, \"\\\\'\").replace(/\"/g, '&quot;');\n  var onclick = \"sendPrompt('dame información sobre la empresa \" + safeNameJs + \"')\";\n  return '<div onclick=\"' + onclick + '\" style=\"display:flex;align-items:center;gap:12px;padding:10px 14px;background:' + BG + ';border:0.5px solid ' + BORDER + ';border-radius:var(--border-radius-md);cursor:pointer;transition:background 0.15s\" onmouseover=\"this.style.background=\\'var(--color-background-secondary)\\';this.style.borderColor=\\'#faa819\\'\" onmouseout=\"this.style.background=\\'var(--color-background-primary)\\';this.style.borderColor=\\'var(--color-border-tertiary)\\'\">' + '<span style=\"font-size:12px;color:' + TEXT + ';min-width:20px;text-align:right\">' + (idx+1) + '</span>' + '<span style=\"flex:1;font-size:14px;color:' + DARK + ';font-weight:500\">&#127970; ' + c.name + '</span>' + '<span style=\"font-size:12px;color:' + GOLD + ';font-weight:500\">ver detalle &#8250;</span>' + '</div>';\n}\n\nfunction header(html) {\n  return '<div style=\"margin-bottom:12px;font-size:13px;color:' + TEXT + ';padding:10px 14px;background:' + BGALT + ';border-radius:var(--border-radius-md)\">' + html + '</div>';\n}\n\nvar output = '';\nvar companies  = rows.map(norm);\nvar isFullCard = (intent === 'COMPANY' || intent === 'RIF');\n\nif (isFullCard) {\n  var headerHtml = '&#128269; Encontré <strong>' + count + '</strong> empresa(s) cuyo nombre se aproxima a <strong>\"' + summary + '\"</strong>. ¿Te refieres a alguna de estas?';\n  var cardsHtml  = companies.map(cardFull).join('<div style=\"height:8px\"></div>');\n  output = '<div style=\"font-family:var(--font-sans);max-width:680px\">' + header(headerHtml) + cardsHtml + '</div>';\n} else {\n  var hint = count >= 10 ? ' <span style=\"font-size:11px;color:' + TEXT + '\">(mostrando los primeros ' + count + ')</span>' : '';\n  var headerHtml = '&#9989; Encontré <strong>' + count + '</strong> empresa(s) para <em>' + summary + '</em>' + hint + '.<br><span style=\"font-size:12px;color:' + TEXT + '\">Haz clic en una empresa para ver su información completa.</span>';\n  var rowsHtml = companies.map(listRow).join('');\n  output = '<div style=\"font-family:var(--font-sans);max-width:680px\">' + header(headerHtml) + '<div style=\"display:flex;flex-direction:column;gap:6px\">' + rowsHtml + '</div></div>';\n}\n\nreturn [{ json: { output } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6880,
+        5184
+      ],
+      "id": "1509933f-93bb-4d22-ab50-13f385497010",
+      "name": "Format Cards2"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { output: $json.output, type: 'results' } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        7072,
+        5184
+      ],
+      "id": "9ca482fe-c586-4bbf-942e-8065e2f1eec4",
+      "name": "Final Respond3"
+    }
+  ],
+  "pinData": {
+    "Webhook1": [
+      {
+        "json": {
+          "headers": {
+            "host": "vmi2945958.contaboserver.net",
+            "content-type": "application/json"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "chatInput": "/aprender CIRA2024 SQL: cuando el usuario escriba \"holanda\" buscar LOWER(name) LIKE LOWER('%holand%') OR LOWER(CIUDAD) LIKE LOWER('%holanda%')",
+            "sessionId": "0cf0b044-d1e6-479c-a110-758368c3e784"
+          },
+          "webhookUrl": "https://vmi2945958.contaboserver.net/webhook/cira-botV2",
+          "executionMode": "production"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Admin Password": {
+      "main": [
+        [
+          {
+            "node": "Detect Command",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detect Command": {
+      "main": [
+        [
+          {
+            "node": "Is Command?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Command?": {
+      "main": [
+        [
+          {
+            "node": "Validate Password",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Load Learnings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Password": {
+      "main": [
+        [
+          {
+            "node": "Route Command",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wrong Password",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wrong Password": {
+      "main": [
+        [
+          {
+            "node": "Respond Wrong Password",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Command": {
+      "main": [
+        [
+          {
+            "node": "INSERT Learning",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SELECT Learnings List",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "UPDATE Disable Learning",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "INSERT Learning": {
+      "main": [
+        [
+          {
+            "node": "Format Save OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Save OK": {
+      "main": [
+        [
+          {
+            "node": "Respond Save OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SELECT Learnings List": {
+      "main": [
+        [
+          {
+            "node": "Format Learnings List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Learnings List": {
+      "main": [
+        [
+          {
+            "node": "Respond List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "UPDATE Disable Learning": {
+      "main": [
+        [
+          {
+            "node": "Format Delete OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Delete OK": {
+      "main": [
+        [
+          {
+            "node": "Respond Delete OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Learnings": {
+      "main": [
+        [
+          {
+            "node": "Build System Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build System Prompt": {
+      "main": [
+        [
+          {
+            "node": "Interactive Intent Agent3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "Pre-Procesing3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pre-Procesing3": {
+      "main": [
+        [
+          {
+            "node": "Admin Password",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Interactive Intent Agent3": {
+      "main": [
+        [
+          {
+            "node": "Parse Intent JSON3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model5": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Interactive Intent Agent3",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Memory Intent3": {
+      "ai_memory": [
+        [
+          {
+            "node": "Interactive Intent Agent3",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Catalog Sectores2": {
+      "ai_tool": [
+        [
+          {
+            "node": "Interactive Intent Agent3",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Catalog Servicios2": {
+      "ai_tool": [
+        [
+          {
+            "node": "Interactive Intent Agent3",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Intent JSON3": {
+      "main": [
+        [
+          {
+            "node": "Is Search Ready?3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Search Ready?3": {
+      "main": [
+        [
+          {
+            "node": "MySQL Query3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Conversation5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MySQL Query3": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Cards2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Respond Conversation6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Cards2": {
+      "main": [
+        [
+          {
+            "node": "Final Respond3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "e0322d08-5826-4f80-bbe5-0cad4e9d54ff",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0869bb34a40714e1449fc63bb52eef3512c31ec145f008f9f8a559029d0d652e"
+  },
+  "id": "m0B93x2GUX7P8F0X",
+  "tags": []
+}
