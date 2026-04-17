@@ -90,8 +90,8 @@ Chatbot conversacional para búsqueda de empresas afiliadas a la Cámara Petrole
 
 ```
 /
-├── chat-widget-v2.js      # Widget de chat (CDN: jsdelivr/GitHub)
-├── cira-botV4.json        # Flujo n8n completo (importar en n8n)
+├── chat-widget-v2.js              # Widget de chat (CDN: jsdelivr/GitHub)
+├── CIRA Bot CAMPET V2.json        # Flujo n8n completo (importar en n8n)
 └── README.md
 ```
 
