@@ -1398,3 +1398,241 @@ a {
         opacity: 1;
     }
 }
+
+/* ================================================================
+   PANTALLAS GRANDES Y KIOSCOS DIGITALES (90x120cm / Full HD+)
+   ================================================================ */
+
+/* ---- Large Desktop / Kiosk 1080p+ (1024px - 1439px) ---- */
+@media screen and (min-width: 1024px) and (max-width: 1439px) {
+    :root {
+        --pad-x: 48px;
+        --pad-y: 32px;
+        --nav-h: 88px;
+        --foot-h: 56px;
+        --btn-min-h: 68px;
+        --btn-cta-h: 84px;
+        --btn-nav-h: 52px;
+        --btn-pad-v: 16px;
+        --btn-pad-h: 32px;
+        --btn-pad-cta-v: 22px;
+        --btn-pad-cta-h: 56px;
+        --fz-xs: 0.9rem;
+        --fz-sm: 1.1rem;
+        --fz-md: 1.25rem;
+        --fz-lg: 1.5rem;
+        --fz-xl: 2.2rem;
+        --fz-xxl: 3rem;
+        --avatar-size: 256px;
+        --avatar-img-size: 228px;
+    }
+
+    .logo-img {
+        height: 48px;
+    }
+
+    .description-bubble {
+        padding: 26px 38px;
+    }
+
+    .cta-section {
+        gap: 20px;
+    }
+}
+
+/* ---- Extra Large / Kiosk Full HD (1440px - 1919px) ---- */
+@media screen and (min-width: 1440px) and (max-width: 1919px) {
+    :root {
+        --pad-x: 56px;
+        --pad-y: 36px;
+        --nav-h: 96px;
+        --foot-h: 60px;
+        --btn-min-h: 72px;
+        --btn-cta-h: 88px;
+        --btn-nav-h: 56px;
+        --btn-pad-v: 18px;
+        --btn-pad-h: 36px;
+        --btn-pad-cta-v: 24px;
+        --btn-pad-cta-h: 64px;
+        --fz-xs: 0.95rem;
+        --fz-sm: 1.15rem;
+        --fz-md: 1.35rem;
+        --fz-lg: 1.65rem;
+        --fz-xl: 2.5rem;
+        --fz-xxl: 3.4rem;
+        --avatar-size: 288px;
+        --avatar-img-size: 256px;
+    }
+
+    .logo-img {
+        height: 52px;
+    }
+
+    .nav-avatar {
+        width: 40px;
+        height: 40px;
+    }
+
+    .description-bubble {
+        padding: 30px 44px;
+    }
+
+    .cta-section {
+        gap: 24px;
+    }
+
+    .idle-card {
+        padding: 40px 36px;
+    }
+
+    .idle-avatar {
+        width: 96px;
+        height: 96px;
+    }
+
+    .ck-body {
+        padding: 20px;
+        gap: 18px;
+    }
+
+    .ck-bubble {
+        padding: 14px 18px;
+    }
+}
+
+/* ---- Ultra Large / Kiosk 4K (1920px+) ---- */
+@media screen and (min-width: 1920px) {
+    :root {
+        --pad-x: 72px;
+        --pad-y: 48px;
+        --nav-h: 108px;
+        --foot-h: 68px;
+        --btn-min-h: 80px;
+        --btn-cta-h: 96px;
+        --btn-nav-h: 64px;
+        --btn-pad-v: 20px;
+        --btn-pad-h: 44px;
+        --btn-pad-cta-v: 28px;
+        --btn-pad-cta-h: 72px;
+        --fz-xs: 1rem;
+        --fz-sm: 1.25rem;
+        --fz-md: 1.5rem;
+        --fz-lg: 1.85rem;
+        --fz-xl: 2.8rem;
+        --fz-xxl: 3.8rem;
+        --avatar-size: 320px;
+        --avatar-img-size: 288px;
+    }
+
+    .logo-img {
+        height: 58px;
+    }
+
+    .nav-title {
+        font-size: var(--fz-md);
+    }
+
+    .nav-avatar {
+        width: 44px;
+        height: 44px;
+    }
+
+    .btn-icon {
+        font-size: 1.4em;
+    }
+
+    .description-bubble {
+        padding: 36px 52px;
+        max-width: 800px;
+    }
+
+    .cta-section {
+        gap: 28px;
+    }
+
+    .btn-cta,
+    .btn-cta-sec {
+        max-width: 480px;
+    }
+
+    .ayuda-main {
+        padding: 48px 72px;
+    }
+
+    .ayuda-grid {
+        max-width: 1200px;
+        gap: 24px;
+    }
+
+    .ayuda-card {
+        padding: 32px;
+    }
+
+    .idle-card {
+        padding: 48px 44px;
+        max-width: 480px;
+    }
+
+    .idle-avatar {
+        width: 112px;
+        height: 112px;
+    }
+
+    .idle-title {
+        font-size: var(--fz-xl);
+    }
+
+    .idle-desc {
+        font-size: var(--fz-md);
+    }
+
+    .ck-body {
+        padding: 24px 32px;
+        gap: 20px;
+    }
+
+    .ck-textarea {
+        padding: 16px 20px;
+        font-size: var(--fz-md);
+    }
+
+    .ck-send {
+        width: 52px;
+        height: 52px;
+    }
+
+    .ck-bubble {
+        padding: 16px 22px;
+        font-size: var(--fz-md);
+    }
+
+    .ck-welcome {
+        padding: 48px 32px;
+    }
+
+    .ck-welcome-avatar {
+        width: 80px;
+        height: 80px;
+    }
+}
+
+/* ---- Pantallas extranchas (proporcion > 1.6) ---- */
+@media screen and (min-aspect-ratio: 16/9) and (min-width: 1024px) {
+    .landing-main {
+        flex-direction: row;
+        justify-content: center;
+        gap: 48px;
+    }
+
+    .avatar-section {
+        flex-direction: row;
+    }
+
+    .description-bubble::before {
+        top: auto;
+        left: -14px;
+        transform: translateX(-50%) rotate(90deg);
+        border-bottom-color: transparent;
+        border-left-color: rgba(30, 41, 59, 0.88);
+    }
+}
