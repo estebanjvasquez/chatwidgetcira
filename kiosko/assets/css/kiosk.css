@@ -714,6 +714,10 @@ a {
     backdrop-filter: none;
     background: rgba(24, 36, 55, 0.98); /* compensa con fondo más opaco */
   }
+  /* Fix input visibility on mobile keyboards */
+  .ck-foot { flex-shrink: 0; }
+  .ck-textarea { min-height: 44px; }
+  .chat-container { min-height: 0; flex: 1; display: flex; flex-direction: column; }
 }
 
 /* ── Animaciones ─────────────────────────────────────────────────── */

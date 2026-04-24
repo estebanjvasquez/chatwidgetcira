@@ -124,7 +124,7 @@
           '<textarea class="ck-textarea" id="ck-input" ' +
             'placeholder="' + t('placeholder') + '" ' +
             'rows="1" ' +
-            'aria-label="Mensaje para CIRA"></textarea>' +
+            'aria-label="Mensaje para CIRA" inputmode="text" type="text"></textarea>' +
           '<button class="ck-send" id="ck-send" aria-label="' + t('send') + '">' +
             '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" ' +
               'stroke="currentColor" stroke-width="2.5" ' +
