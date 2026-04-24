@@ -1,0 +1,345 @@
+================================================================================
+CONTEXTO DE SESIÓN — CIRA KIOSKO
+Proyecto: chatwidgetcira
+Branch: development
+Fecha: Abril 2026
+================================================================================
+
+────────────────────────────────────────────────────────────────────────────────
+1. DESCRIPCIÓN DEL PROYECTO EXISTENTE (antes de esta sesión)
+────────────────────────────────────────────────────────────────────────────────
+
+Widget de chat para el asistente virtual CIRA de la Cámara Petrolera de Venezuela.
+Se integra con un workflow de n8n mediante webhook.
+
+Archivos principales en la raíz:
+  - chat-widget-v2.js     → Widget original (CDN, bubble + inline)
+  - Campet-Logo.png       → Logo corporativo
+  - cirabot.png           → Avatar del bot (710 KB)
+  - CIRA Bot CAMPET V2.json → Workflow de n8n
+  - wp-script-examples.html → Ejemplos de integración WordPress/Divi
+
+Webhook n8n (producción):
+  URL:    https://vmi2945958.contaboserver.net/webhook/cira-botV2
+  Método: POST
+  Body:   { "chatInput": "texto", "sessionId": "uuid" }
+  Resp:   { "output": "<HTML>", "type": "results|conversation" }
+
+Color primario de marca: #faa819 (dorado CPV)
+
+Configuración del widget:
+  window.ChatWidgetConfig = {
+    webhookUrl:    'https://vmi2945958.contaboserver.net/webhook/cira-botV2',
+    avatar:        'URL o ruta a cirabot.png',
+    mode:          'bubble' | 'inline',
+    mountSelector: '#cira-chat',          // solo para inline
+    style:         { primaryColor: '#faa819' }
+  };
+
+
+────────────────────────────────────────────────────────────────────────────────
+2. LO QUE SE CONSTRUYÓ EN ESTA SESIÓN — KIOSKO TÁCTIL
+────────────────────────────────────────────────────────────────────────────────
+
+Se creó una experiencia kiosko completa en ./kiosko/ para stand/evento.
+Sin dependencias de CDN. Funciona completamente desde archivos locales.
+El único requisito de red es el webhook de n8n para el chat.
+
+ESTRUCTURA DE ARCHIVOS:
+  kiosko/
+  ├── index.html                  → Landing: avatar animado + descripción + CTAs
+  ├── bot.html                    → Chat embebido full-height + overlay inactividad
+  ├── ayuda.html                  → Guía de uso en tarjetas táctiles
+  ├── README.md                   → Documentación técnica completa (14 secciones)
+  └── assets/
+      ├── css/
+      │   └── kiosk.css           → Sistema de diseño completo (~800 líneas)
+      ├── js/
+      │   ├── kiosk.js            → Transiciones de página + anti-zoom táctil
+      │   ├── idle-manager.js     → Temporizador de inactividad configurable
+      │   └── chat-widget-kiosk.js→ Widget local sin CDN (solo inline, sesión fresca)
+      └── img/
+          ├── cirabot.png         → Copiado desde raíz
+          └── campet-logo.png     → Copiado desde raíz
+
+
+────────────────────────────────────────────────────────────────────────────────
+3. FLUJO DE NAVEGACIÓN
+────────────────────────────────────────────────────────────────────────────────
+
+index.html (Landing)
+  ├─ [Iniciar conversación] ──► bot.html
+  ├─ [¿Cómo funciona?] ───────► ayuda.html
+  └─ Inactividad 120s → recarga index.html
+
+bot.html (Chat)
+  ├─ [Nueva]   → resetea chat, misma página (llama CiraKiosk.reset())
+  ├─ [Ayuda]   → ayuda.html
+  ├─ [Inicio]  → index.html
+  ├─ Inactividad 75s → overlay de aviso con cuenta regresiva 15s
+  └─ Inactividad 90s → CiraKiosk.reset() + redirige a index.html
+
+ayuda.html (Guía)
+  ├─ [Usar CIRA] → bot.html
+  ├─ [Inicio]    → index.html
+  └─ Inactividad 120s → redirige a index.html
+
+
+────────────────────────────────────────────────────────────────────────────────
+4. DECISIONES TÉCNICAS CLAVE
+────────────────────────────────────────────────────────────────────────────────
+
+TEMA OSCURO:
+  Fondo principal: #0f172a (azul noche)
+  Fondo nav/cards: #1e293b
+  Primario (dorado): #faa819
+  Texto: #f1f5f9
+
+CSS VARIABLES (sección :root en kiosk.css):
+  --clr-primary       #faa819    → color dorado de marca
+  --clr-primary-dark  #d4890c    → estado :active
+  --clr-primary-glow  rgba(250,168,25,0.32)
+  --clr-bg-main       #0f172a
+  --clr-bg-nav        #1e293b
+  --clr-bg-card       rgba(30,41,59,0.88)
+  --nav-h             80px       → altura navbar
+  --btn-min-h         64px       → altura mínima botones
+  --btn-cta-h         80px       → botón CTA principal
+
+SESIÓN DEL CHAT:
+  Sesión fresca por cada visita (NO persiste en localStorage).
+  Razón: kiosko público, múltiples usuarios.
+  Generada con crypto.randomUUID() o fallback con Date.now().
+  API global: window.CiraKiosk.reset() limpia chat y genera nueva sesión.
+
+IDLE MANAGER (idle-manager.js):
+  Inicialización por página (en cada HTML, al final del body):
+    document.addEventListener('DOMContentLoaded', function() {
+      IdleManager.init({
+        timeout:     90000,   // ms hasta onIdle
+        warningAt:   15000,   // ms antes del timeout para mostrar overlay
+        warningEl:   document.getElementById('idle-overlay'),
+        countdownEl: document.getElementById('idle-countdown'),
+        onIdle: function() { ... }
+      });
+    });
+  API: IdleManager.extend() cancela el timer (botón "Continuar").
+
+ANTI-ZOOM TÁCTIL (kiosk.js):
+  Bloquea pinch-zoom y doble-tap zoom.
+  Transición de salida: añade clase 'page-exit' al body (CSS pageOut animation).
+
+CSS DEL WIDGET:
+  Los estilos del widget (.ck-shell, .ck-body, etc.) están en kiosk.css,
+  NO inyectados por JS. Esto elimina el FOUC al navegar a bot.html.
+  El widget usa clases .ck-* para todos sus elementos.
+
+
+────────────────────────────────────────────────────────────────────────────────
+5. OPTIMIZACIONES DE RENDIMIENTO (commit def60e1)
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEMA ORIGINAL: ~2 segundos de carga en servidor, más en móvil/tablet.
+
+CAUSAS Y SOLUCIONES APLICADAS:
+
+1. Scripts bloqueaban el parser HTML
+   FIX: defer en todos los scripts externos de las 3 páginas
+   <script src="assets/js/idle-manager.js" defer></script>
+   <script src="assets/js/kiosk.js" defer></script>
+   (chat-widget-kiosk.js también defer en bot.html)
+
+2. Página en blanco mientras JS cargaba
+   CAUSA: kiosk.js seteaba document.documentElement.style.opacity='0' al cargar,
+          esperaba DOMContentLoaded para volverlo a 1. Si JS tardaba → página en blanco.
+   FIX: Animación CSS pura en body:
+     body { animation: pageIn 300ms ease both; }
+     @keyframes pageIn { from { opacity: 0; } to { opacity: 1; } }
+   Salida: body.page-exit { animation: pageOut 260ms ease forwards; }
+
+3. Imágenes descubiertas tarde
+   FIX: <link rel="preload" href="assets/img/cirabot.png" as="image" fetchpriority="high">
+        <link rel="preload" href="assets/img/campet-logo.png" as="image">
+   En las 3 páginas HTML.
+
+4. Primera petición al webhook lenta (TCP/TLS cold)
+   FIX (solo bot.html):
+   <link rel="preconnect" href="https://vmi2945958.contaboserver.net">
+
+5. Navegación lenta entre páginas
+   FIX: <link rel="prefetch" href="bot.html"> en index.html y ayuda.html
+        <link rel="prefetch" href="assets/js/chat-widget-kiosk.js"> también prefetched
+
+6. backdrop-filter costoso en GPU de móvil/tablet
+   FIX: media query que lo desactiva en dispositivos táctiles:
+     @media (hover: none), (max-width: 768px) {
+       .description-bubble, .ayuda-card, .idle-card {
+         -webkit-backdrop-filter: none;
+         backdrop-filter: none;
+         background: rgba(24, 36, 55, 0.98);
+       }
+     }
+
+7. CSS del widget inyectado en runtime por JS
+   FIX: Los estilos se movieron a kiosk.css. Se eliminó la función injectCSS()
+        del widget. Elimina el flash de contenido sin estilo.
+
+8. IdleManager.init() en inline script antes que los scripts defer
+   FIX: Envuelto en DOMContentLoaded (que dispara DESPUÉS de todos los defer):
+     document.addEventListener('DOMContentLoaded', function() {
+       IdleManager.init({...});
+     });
+   NOTA: resetConversation() sí se define como función global (no en DOMContentLoaded)
+         porque es llamada desde onclick="" en el HTML.
+
+
+────────────────────────────────────────────────────────────────────────────────
+6. ANIMACIÓN DEL AVATAR — EFECTO LATIDO
+────────────────────────────────────────────────────────────────────────────────
+
+UBICACIÓN EN HTML (index.html):
+  <div class="avatar-wrapper">
+    <div class="avatar-glow"   aria-hidden="true"></div>
+    <div class="avatar-ring"   aria-hidden="true"></div>
+    <div class="avatar-ring avatar-ring-2" aria-hidden="true"></div>
+    <div class="avatar-ring avatar-ring-3" aria-hidden="true"></div>
+    <img src="assets/img/cirabot.png" class="avatar-img" ...>
+  </div>
+
+DIMENSIONES RELEVANTES:
+  .avatar-wrapper:  224px × 224px
+  .avatar-img:      200px × 200px + 4px border = 208px visual
+  .avatar-glow:     inset: -16px → 256px (radial gradient, z-index: 0)
+  .avatar-ring:     inset: 8px  → 208px = BORDE EXACTO DEL AVATAR (z-index: 1)
+  .avatar-img:      z-index: 2 (encima de todo)
+
+LÓGICA DEL KEYFRAME (ripplePulse):
+  0%  → scale(1.00), opacity: 0    — anillo OCULTO bajo la imagen del avatar
+  20% → scale(1.20), opacity: 0.65 — anillo emerge ~15px afuera del avatar (PICO)
+  100%→ scale(1.90), opacity: 0    — anillo se expande a 395px y se disuelve
+
+  La clave: los anillos parten BAJO la imagen (opacity:0), emergen visibles al 20%,
+  y se disuelven al 100%. Entre latidos hay silencio visual real.
+
+TRES ANILLOS ESCALONADOS:
+  .avatar-ring   → animation-delay: 0s
+  .avatar-ring-2 → animation-delay: 0.83s  (= duración / 3 = 2.5 / 3)
+  .avatar-ring-3 → animation-delay: 1.66s  (= duración / 3 × 2)
+
+OTRAS ANIMACIONES DEL AVATAR:
+  avatarPopIn: aparece con resorte al cargar (0.9s, cubic-bezier spring)
+  avatarFloat: flota suave arriba/abajo (4s, translateY -11px)
+  glowPulse:   resplandor ambiental detrás (3s, scale 1→1.08)
+
+DÓNDE AJUSTAR:
+  Color:     background-color en .avatar-ring → rgba(250, 168, 25, 0.65)
+  Inset:     inset en .avatar-ring → 8px (positivo = más pequeño, negativo = más grande)
+  Velocidad: duración en animation de .avatar-ring → 2.5s
+             ⚠ Al cambiar duración, actualizar delays: delay = duración / 3
+  Expansión: scale(1.90) en @keyframes ripplePulse al 100%
+  Intensidad:opacity: 0.65 en @keyframes ripplePulse al 20%
+
+FIXES APLICADOS DURANTE LA SESIÓN:
+  Intento 1 (inset:0):     anillos 224px, halo visible solo 2px → imperceptible
+  Intento 2 (inset:-24px): anillos 272px, siempre visibles → línea naranja estática
+  Intento 3 (inset:8px) +  anillos 208px, parten ocultos, emergen al 20% → CORRECTO
+    keyframe con opacity:0→0.65→0
+
+
+────────────────────────────────────────────────────────────────────────────────
+7. CÓMO EJECUTAR EL KIOSKO
+────────────────────────────────────────────────────────────────────────────────
+
+SERVIDOR HTTP LOCAL (recomendado para evitar CORS con fetch):
+  cd kiosko
+  python -m http.server 8080
+  → http://localhost:8080/index.html
+
+ABRIR DIRECTO:
+  Doble clic en kiosko/index.html
+  (funciona para navegar, pero fetch al webhook puede fallar en algunos navegadores)
+
+CHROME MODO KIOSKO (producción en evento):
+  chrome.exe --kiosk --no-first-run --disable-infobars \
+    "http://localhost:8080/index.html"
+
+HARD REFRESH para limpiar caché CSS/JS:
+  Ctrl + Shift + R  (Windows/Linux)
+  Cmd + Shift + R   (Mac)
+
+
+────────────────────────────────────────────────────────────────────────────────
+8. HISTORIAL DE COMMITS DE ESTA SESIÓN
+────────────────────────────────────────────────────────────────────────────────
+
+48a2bdc  fix: corregir efecto de latido (inset:8px + keyframe opacity:0→0.65→0)
+6c3b9cd  feat: reemplazar ondas de contorno por pulso de círculo relleno
+def60e1  perf: eliminar causas de carga lenta en servidor y móvil
+22d345c  Add kiosko/ — experiencia táctil completa para stand de evento
+
+Todos en branch: development
+
+
+────────────────────────────────────────────────────────────────────────────────
+9. ARCHIVOS JS — RESPONSABILIDADES Y API
+────────────────────────────────────────────────────────────────────────────────
+
+kiosk.js
+  - Transición fade-out al navegar (body.page-exit → @keyframes pageOut → 260ms → href)
+  - Intercepta links internos con event delegation
+  - Bloquea pinch-zoom y doble-tap (events: touchstart, touchend)
+  - API: window.KioskNav.goTo(url) | .home() | .bot() | .help()
+
+idle-manager.js
+  - Detecta: touchstart, touchmove, touchend, pointerdown, pointermove,
+             mousedown, mousemove, keydown, scroll, wheel, click
+  - clearTimeout + setTimeout en cada evento (rebounce)
+  - API:
+    IdleManager.init(config)   → inicia el timer
+    IdleManager.extend()       → cancela timer y lo reinicia (botón "Continuar")
+    IdleManager.destroy()      → para el timer y remueve listeners
+
+chat-widget-kiosk.js
+  - Solo inline mode (no bubble)
+  - Webhook: POST { chatInput, sessionId } → { output, type }
+  - Sesión fresca: newSession() con crypto.randomUUID() en cada init/reset
+  - Detección de idioma: RE_ES | RE_EN (español por defecto si navigator.language es es-*)
+  - Saludos locales: regex /^(hola|hello|hi|hey|buenas...)$/ → respuesta sin webhook
+  - Aviso lento: setTimeout 45s → addBot(t('slow'))
+  - Linkify seguro: opera solo en nodos de texto (no en atributos HTML)
+  - API global:
+    window.CiraKiosk.reset()    → limpia chat + nueva sesión
+    window.CiraKiosk.send(text) → envía mensaje
+    window.sendPrompt(text)     → alias (compatibilidad con onclick en tarjetas bot)
+
+
+────────────────────────────────────────────────────────────────────────────────
+10. NOTAS IMPORTANTES PARA PRÓXIMAS SESIONES
+────────────────────────────────────────────────────────────────────────────────
+
+- cirabot.png pesa 710KB. Para kiosko local no es problema (disco).
+  Si se sube a servidor lento, considerar optimizar a <150KB con squoosh.app.
+
+- El CSS del widget (.ck-*) está en kiosk.css, NO en chat-widget-kiosk.js.
+  Si se modifica el JS del widget y se añaden nuevas clases CSS, añadirlas en kiosk.css.
+
+- Los scripts tienen defer. Los inline scripts que llaman funciones de scripts
+  defer deben estar dentro de DOMContentLoaded. Las funciones llamadas desde
+  onclick="" deben declararse como globales (fuera de DOMContentLoaded).
+
+- El servidor de desarrollo local corre en:
+  python -m http.server 8080 (desde ./kiosko/)
+  → http://localhost:8080/index.html
+
+- README.md dentro de kiosko/ tiene documentación completa de ajustes
+  de visualización, escala, animaciones y troubleshooting.
+
+- will-change: transform, opacity está declarado en .avatar-ring y .ck-dot.
+  NO añadir will-change a elementos estáticos (consume memoria GPU sin beneficio).
+
+- backdrop-filter está desactivado en (hover:none)|(max-width:768px) para rendimiento
+  en móvil. En desktop kiosko con pantalla grande permanece activo.
+
+================================================================================
+FIN DEL CONTEXTO
+================================================================================

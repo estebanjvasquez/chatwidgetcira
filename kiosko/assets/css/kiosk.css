@@ -308,51 +308,19 @@ a {
   z-index: 0;
 }
 
-/*
- * ╔════════════════════════════════════════════════════════════════╗
- * ║            EFECTO LATIDO — PARÁMETROS AJUSTABLES              ║
- * ╠════════════════════════════════════════════════════════════════╣
- * ║  🎨 COLOR     →  background-color: rgba(R, G, B, alpha)       ║
- * ║                  R=250 G=168 B=25 = dorado #faa819             ║
- * ║                                                                ║
- * ║  📐 INSET     →  inset en .avatar-ring                        ║
- * ║                  wrapper=224px | avatar(img+borde)=208px       ║
- * ║                  inset: 8px  → anillo=208px (borde del avatar) ║
- * ║                  inset: 0    → anillo=224px (+8px de halo)     ║
- * ║                  inset:-12px → anillo=248px (+20px de halo)    ║
- * ║                                                                ║
- * ║  📐 EXPANSIÓN →  scale al 20% y al 100% del keyframe          ║
- * ║                  scale(1.90) = expansión recomendada           ║
- * ║                                                                ║
- * ║  ⏱ VELOCIDAD  →  duración en animation (2.5s)                 ║
- * ║                  ⚠ Si cambias la duración actualiza los delay: ║
- * ║                     delay = duración / 3                       ║
- * ╚════════════════════════════════════════════════════════════════╝
- */
+/* Ondas concéntricas tipo latido — 3 anillos desfasados */
 .avatar-ring {
   position: absolute;
-
-  /* 📐 INSET — 8px hace que los anillos partan exactamente del borde
-     del avatar (200px imagen + 4px borde × 2 = 208px = wrapper 224px - 8px × 2).
-     Los anillos inician OCULTOS bajo la imagen y emergen al expandirse. */
-  inset: 8px;
-
+  inset: 0;
   border-radius: 50%;
-
-  /* 🎨 COLOR — rgba(R, G, B, intensidad) */
-  background-color: rgba(250, 168, 25, 0.65);
-
-  /* ⏱ VELOCIDAD — cambiar 2.5s */
-  animation: ripplePulse 2.5s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
-
+  border: 2px solid rgba(250, 168, 25, 0.70);
+  animation: ripplePulse 2.4s cubic-bezier(0.20, 0.60, 0.40, 1) infinite;
   z-index: 1;
   pointer-events: none;
-  will-change: transform, opacity; /* capa GPU — no modificar */
+  will-change: transform, opacity; /* promueve a capa GPU, elimina repaint */
 }
-
-/* ⏱ DELAY — duración / 3 = 2.5 / 3 ≈ 0.83s por escalón */
-.avatar-ring-2 { animation-delay: 0.83s; }
-.avatar-ring-3 { animation-delay: 1.66s; }
+.avatar-ring-2 { animation-delay: 0.80s; }
+.avatar-ring-3 { animation-delay: 1.60s; }
 
 .avatar-img {
   position: relative;
@@ -775,18 +743,8 @@ a {
 }
 
 @keyframes ripplePulse {
-  0% {
-    transform: scale(1.00); /* oculto bajo la imagen del avatar */
-    opacity: 0;
-  }
-  20% {
-    transform: scale(1.20); /* 📐 PICO — emergen ~15px fuera del avatar, visibles */
-    opacity: 0.65;          /* 🎨 INTENSIDAD MÁXIMA del pulso */
-  }
-  100% {
-    transform: scale(1.90); /* 📐 EXPANSIÓN FINAL — cuánto se aleja del avatar */
-    opacity: 0;             /* siempre 0 — el pulso se disuelve */
-  }
+  0%   { transform: scale(0.95); opacity: 0.75; }
+  100% { transform: scale(2.10); opacity: 0;    }
 }
 
 @keyframes fadeSlideUp {
