@@ -1,36 +1,18 @@
 /* ================================================================
    CIRA KIOSK — Navegación y utilidades compartidas
+   La animación de entrada (pageIn) está en kiosk.css y funciona
+   sin JS, eliminando la página en blanco durante la carga.
    ================================================================ */
 (function () {
   'use strict';
 
-  /* ── Transición de entrada (fade-in al cargar) ───────────────── */
-  document.documentElement.style.opacity = '0';
-  document.documentElement.style.transition = 'opacity 380ms ease';
-
-  function _onReady(fn) {
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', fn);
-    } else {
-      fn();
-    }
-  }
-
-  _onReady(function () {
-    requestAnimationFrame(function () {
-      document.documentElement.style.opacity = '1';
-    });
-  });
-
-  /* ── Transición de salida (fade-out antes de navegar) ────────── */
+  /* ── Transición de salida al navegar ─────────────────────────── */
   function _navigateTo(url) {
-    document.documentElement.style.opacity = '0';
-    setTimeout(function () {
-      window.location.href = url;
-    }, 360);
+    document.body.classList.add('page-exit');
+    setTimeout(function () { window.location.href = url; }, 260);
   }
 
-  /* Intercepta todos los enlaces internos para aplicar la transición */
+  /* Intercepta enlaces internos para aplicar fade-out */
   document.addEventListener('click', function (e) {
     var link = e.target.closest('a[href]');
     if (!link) return;
@@ -49,12 +31,10 @@
   });
 
   /* ── Anti-zoom táctil (kiosko público) ──────────────────────── */
-  /* Bloquea pinch-zoom */
   document.addEventListener('touchstart', function (e) {
     if (e.touches.length > 1) e.preventDefault();
   }, { passive: false });
 
-  /* Bloquea doble-tap zoom */
   var _lastTap = 0;
   document.addEventListener('touchend', function (e) {
     var now = Date.now();

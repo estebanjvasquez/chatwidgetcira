@@ -7,6 +7,16 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>CIRA — Asistente Virtual CPV</title>
+
+  <!-- Preload de recursos críticos: descarga paralela al HTML -->
+  <link rel="preload" href="assets/css/kiosk.css"          as="style">
+  <link rel="preload" href="assets/img/cirabot.png"         as="image" fetchpriority="high">
+  <link rel="preload" href="assets/img/campet-logo.png"     as="image">
+
+  <!-- Prefetch de la página más probable de visitar a continuación -->
+  <link rel="prefetch" href="bot.html">
+  <link rel="prefetch" href="assets/js/chat-widget-kiosk.js">
+
   <link rel="stylesheet" href="assets/css/kiosk.css">
 </head>
 <body class="page-landing">
@@ -18,6 +28,7 @@
         src="assets/img/campet-logo.png"
         alt="Cámara Petrolera de Venezuela"
         class="logo-img"
+        decoding="async"
       >
     </div>
 
@@ -43,6 +54,8 @@
           src="assets/img/cirabot.png"
           alt="CIRA — Asistente virtual de la Cámara Petrolera de Venezuela"
           class="avatar-img"
+          fetchpriority="high"
+          decoding="async"
         >
       </div>
 
@@ -87,15 +100,17 @@
     <p class="footer-text" aria-live="polite">Toca la pantalla para comenzar</p>
   </footer>
 
-  <!-- ── Scripts ────────────────────────────────────────────── -->
-  <script src="assets/js/idle-manager.js"></script>
-  <script src="assets/js/kiosk.js"></script>
+  <!-- ── Scripts — defer: no bloquean el render ─────────────── -->
+  <script src="assets/js/idle-manager.js" defer></script>
+  <script src="assets/js/kiosk.js"        defer></script>
   <script>
-    /* Landing: la inactividad solo recarga la página (ya está en inicio) */
-    IdleManager.init({
-      timeout:  120000,   /* 2 minutos */
-      warningAt: 20000,   /* aviso 20 s antes (no hay overlay en landing) */
-      onIdle: function () { location.reload(); }
+    /* DOMContentLoaded: se ejecuta DESPUÉS de los scripts defer */
+    document.addEventListener('DOMContentLoaded', function () {
+      IdleManager.init({
+        timeout:   120000,
+        warningAt:  20000,
+        onIdle: function () { location.reload(); }
+      });
     });
   </script>
 

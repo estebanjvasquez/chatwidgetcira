@@ -113,91 +113,7 @@
 
   /* ── Refs del DOM ────────────────────────────────────────────── */
   var bodyEl, inputEl, sendEl, spinnerEl;
-
-  /* ── Inyección de estilos del widget ─────────────────────────── */
-  function injectCSS() {
-    var s = document.createElement('style');
-    s.id  = 'ck-styles';
-    s.textContent = [
-      /* Shell principal */
-      '.ck-shell{display:flex;flex-direction:column;height:100%;background:#0d1117;',
-      'font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,Arial,sans-serif;',
-      'overflow:hidden;}',
-
-      /* Área de mensajes */
-      '.ck-body{flex:1;overflow-y:auto;padding:20px 22px;display:flex;',
-      'flex-direction:column;gap:14px;scroll-behavior:smooth;',
-      'scrollbar-width:thin;scrollbar-color:rgba(250,168,25,.28) transparent;}',
-      '.ck-body::-webkit-scrollbar{width:5px;}',
-      '.ck-body::-webkit-scrollbar-thumb{background:rgba(250,168,25,.28);border-radius:3px;}',
-
-      /* Pie con input */
-      '.ck-foot{padding:14px 18px;background:#1e293b;',
-      'border-top:1px solid rgba(255,255,255,.08);flex-shrink:0;}',
-      '.ck-input-row{display:flex;align-items:flex-end;gap:10px;}',
-      '.ck-textarea{flex:1;background:#0f172a;border:2px solid rgba(255,255,255,.1);',
-      'border-radius:14px;color:#f1f5f9;font-size:1.05rem;padding:13px 16px;',
-      'resize:none;outline:none;min-height:50px;max-height:128px;',
-      'line-height:1.5;font-family:inherit;transition:border-color 180ms;}',
-      '.ck-textarea:focus{border-color:' + PRIMARY + ';}',
-      '.ck-textarea::placeholder{color:rgba(255,255,255,.3);}',
-
-      /* Botón enviar */
-      '.ck-send{width:50px;height:50px;border-radius:50%;background:' + PRIMARY + ';',
-      'border:none;color:#111;cursor:pointer;display:flex;align-items:center;',
-      'justify-content:center;flex-shrink:0;transition:transform 150ms,background 150ms;',
-      '-webkit-tap-highlight-color:transparent;}',
-      '.ck-send:active{transform:scale(.92);background:#d4890c;}',
-      '.ck-send:disabled{opacity:.45;cursor:not-allowed;}',
-      '.ck-send svg{pointer-events:none;}',
-
-      /* Burbuja de bienvenida */
-      '.ck-welcome{display:flex;flex-direction:column;align-items:center;gap:12px;',
-      'padding:18px 0 6px;text-align:center;}',
-      '.ck-welcome-avatar{width:76px;height:76px;border-radius:50%;object-fit:cover;',
-      'border:3px solid ' + PRIMARY + ';box-shadow:0 0 22px rgba(250,168,25,.22);}',
-      '.ck-welcome-name{font-size:1.05rem;font-weight:700;color:#f1f5f9;}',
-      '.ck-welcome-text{font-size:.98rem;color:#94a3b8;line-height:1.65;max-width:480px;}',
-      '.ck-welcome-text strong{color:#f1f5f9;}',
-
-      /* Mensajes */
-      '.ck-row{display:flex;gap:8px;align-items:flex-end;max-width:88%;}',
-      '.ck-row.ck-user{align-self:flex-end;flex-direction:row-reverse;max-width:78%;}',
-      '.ck-avatar{width:34px;height:34px;border-radius:50%;object-fit:cover;',
-      'flex-shrink:0;border:2px solid ' + PRIMARY + ';}',
-      '.ck-bubble{padding:13px 17px;border-radius:18px;font-size:1.05rem;',
-      'line-height:1.65;word-wrap:break-word;overflow-wrap:break-word;}',
-      '.ck-bot-bub{background:#1e293b;color:#f1f5f9;',
-      'border:1px solid rgba(255,255,255,.07);border-bottom-left-radius:4px;}',
-      '.ck-usr-bub{background:' + PRIMARY + ';color:#111;font-weight:500;',
-      'border-bottom-right-radius:4px;}',
-      '.ck-bubble a{color:' + PRIMARY + ';}',
-      '.ck-usr-bub a{color:#111;text-decoration:underline;}',
-
-      /* Spinner */
-      '.ck-spin-row{display:flex;gap:8px;align-items:center;max-width:88%;}',
-      '.ck-spin-bub{background:#1e293b;border:1px solid rgba(255,255,255,.07);',
-      'border-radius:18px;border-bottom-left-radius:4px;',
-      'padding:13px 18px;display:flex;align-items:center;gap:5px;}',
-      '.ck-dot{width:8px;height:8px;background:' + PRIMARY + ';border-radius:50%;',
-      'animation:ck-b 1.2s infinite ease-in-out;}',
-      '.ck-dot:nth-child(2){animation-delay:.2s;}',
-      '.ck-dot:nth-child(3){animation-delay:.4s;}',
-      '@keyframes ck-b{0%,60%,100%{transform:translateY(0);opacity:.55;}',
-      '30%{transform:translateY(-6px);opacity:1;}}',
-
-      /* Tarjetas empresa del bot */
-      '.ck-bubble .empresa-card,.ck-bubble .result-card{',
-      'background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);',
-      'border-radius:10px;padding:11px 14px;margin:7px 0;}',
-      '.ck-bubble .empresa-card h3,.ck-bubble .result-card h3{',
-      'color:' + PRIMARY + ';font-size:.95rem;margin-bottom:4px;}',
-      '.ck-bubble .empresa-card p,.ck-bubble .result-card p{',
-      'font-size:.88rem;color:#94a3b8;margin:2px 0;}'
-    ].join('');
-
-    document.head.appendChild(s);
-  }
+  /* Los estilos del widget están en kiosk.css — sin inyección JS */
 
   /* ── Construcción del DOM ────────────────────────────────────── */
   function buildShell() {
@@ -356,7 +272,6 @@
       return;
     }
 
-    injectCSS();
     newSession();
     mount.innerHTML = buildShell();
 

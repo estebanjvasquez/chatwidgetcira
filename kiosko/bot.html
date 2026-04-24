@@ -6,6 +6,15 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <title>CIRA — Chat</title>
+
+  <!-- Preconnect: establece TCP/TLS con el webhook antes del primer mensaje -->
+  <link rel="preconnect" href="https://vmi2945958.contaboserver.net">
+
+  <!-- Preload de recursos críticos -->
+  <link rel="preload" href="assets/css/kiosk.css"      as="style">
+  <link rel="preload" href="assets/img/cirabot.png"     as="image" fetchpriority="high">
+  <link rel="preload" href="assets/img/campet-logo.png" as="image">
+
   <link rel="stylesheet" href="assets/css/kiosk.css">
 </head>
 <body class="page-bot">
@@ -17,6 +26,7 @@
         src="assets/img/campet-logo.png"
         alt="Cámara Petrolera de Venezuela"
         class="logo-img"
+        decoding="async"
       >
     </div>
 
@@ -27,14 +37,15 @@
           alt=""
           class="nav-avatar"
           aria-hidden="true"
+          decoding="async"
         >
         CIRA Asistente
       </span>
     </div>
 
     <div class="nav-actions">
-      <!-- Nueva conversación -->
       <button
+        type="button"
         class="btn btn-nav"
         onclick="resetConversation()"
         aria-label="Iniciar nueva conversación"
@@ -44,24 +55,12 @@
         <span class="btn-label">Nueva</span>
       </button>
 
-      <!-- Ayuda -->
-      <a
-        href="ayuda.html"
-        class="btn btn-nav"
-        aria-label="Ir a la página de ayuda"
-        title="Ayuda"
-      >
+      <a href="ayuda.html" class="btn btn-nav" aria-label="Ir a la página de ayuda" title="Ayuda">
         <span class="btn-icon" aria-hidden="true">&#9432;</span>
         <span class="btn-label">Ayuda</span>
       </a>
 
-      <!-- Inicio -->
-      <a
-        href="index.html"
-        class="btn btn-nav"
-        aria-label="Volver a la pantalla de inicio"
-        title="Inicio"
-      >
+      <a href="index.html" class="btn btn-nav" aria-label="Volver a la pantalla de inicio" title="Inicio">
         <span class="btn-icon" aria-hidden="true">&#8962;</span>
         <span class="btn-label">Inicio</span>
       </a>
@@ -85,25 +84,22 @@
   >
     <div class="idle-card">
       <div class="idle-avatar" aria-hidden="true">
-        <img src="assets/img/cirabot.png" alt="" class="idle-avatar-img">
+        <img src="assets/img/cirabot.png" alt="" class="idle-avatar-img" decoding="async">
       </div>
-
       <h2 class="idle-title" id="idle-title">¿Sigues ahí?</h2>
-
       <p class="idle-desc" id="idle-desc">
         La sesión se reiniciará en
         <strong><span id="idle-countdown">15</span></strong>
         segundos por inactividad
       </p>
-
       <button
+        type="button"
         class="btn btn-primary btn-idle-continue"
         onclick="IdleManager.extend()"
         aria-label="Continuar usando el asistente"
       >
         Continuar conversación
       </button>
-
       <a
         href="index.html"
         class="btn btn-secondary btn-idle-home"
@@ -114,7 +110,7 @@
     </div>
   </div>
 
-  <!-- ── Configuración del widget ──────────────────────────── -->
+  <!-- Config del widget — inline, se ejecuta antes de los scripts defer -->
   <script>
     window.ChatWidgetConfig = {
       webhookUrl:    'https://vmi2945958.contaboserver.net/webhook/cira-botV2',
@@ -123,31 +119,32 @@
       mountSelector: '#cira-chat-kiosk',
       style:         { primaryColor: '#faa819' }
     };
+
+    /* Global para onclick — seguro porque el usuario no puede pulsarlo
+       antes de que la página esté renderizada y el widget cargado */
+    function resetConversation() {
+      if (window.CiraKiosk) window.CiraKiosk.reset();
+    }
   </script>
 
-  <!-- ── Scripts ────────────────────────────────────────────── -->
-  <script src="assets/js/chat-widget-kiosk.js"></script>
-  <script src="assets/js/idle-manager.js"></script>
-  <script src="assets/js/kiosk.js"></script>
-  <script>
-    /* Botón "Nueva conversación": limpia el chat sin salir de la página */
-    function resetConversation() {
-      if (window.CiraKiosk) {
-        window.CiraKiosk.reset();
-      }
-    }
+  <!-- Scripts defer — no bloquean el parser ni el render -->
+  <script src="assets/js/chat-widget-kiosk.js" defer></script>
+  <script src="assets/js/idle-manager.js"       defer></script>
+  <script src="assets/js/kiosk.js"              defer></script>
 
-    /* Inactividad: aviso a los 75 s, redirige al inicio a los 90 s */
-    IdleManager.init({
-      timeout:     90000,
-      warningAt:   15000,
-      warningEl:   document.getElementById('idle-overlay'),
-      countdownEl: document.getElementById('idle-countdown'),
-      onIdle: function () {
-        /* Limpia el chat antes de volver al inicio */
-        if (window.CiraKiosk) window.CiraKiosk.reset();
-        window.location.href = 'index.html';
-      }
+  <!-- Init del idle — DOMContentLoaded garantiza que los defer ya corrieron -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      IdleManager.init({
+        timeout:     90000,
+        warningAt:   15000,
+        warningEl:   document.getElementById('idle-overlay'),
+        countdownEl: document.getElementById('idle-countdown'),
+        onIdle: function () {
+          if (window.CiraKiosk) window.CiraKiosk.reset();
+          window.location.href = 'index.html';
+        }
+      });
     });
   </script>
 
