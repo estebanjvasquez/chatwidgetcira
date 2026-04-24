@@ -309,36 +309,40 @@ a {
 }
 
 /*
- * ╔══════════════════════════════════════════════════════════════╗
- * ║           EFECTO LATIDO — PARÁMETROS AJUSTABLES             ║
- * ╠══════════════════════════════════════════════════════════════╣
- * ║  🎨 COLOR    →  background-color: rgba(R, G, B, alpha)      ║
- * ║                 R=250 G=168 B=25 = dorado #faa819            ║
- * ║                 alpha = intensidad del pulso (0.0 – 1.0)    ║
- * ║                                                              ║
- * ║  📐 TAMAÑO   →  scale() en @keyframes ripplePulse al 100%   ║
- * ║                 1.40 = expansión del 40% (sutil)             ║
- * ║                 1.60 = expansión del 60% (notable)           ║
- * ║                 1.90 = expansión del 90% (amplia)            ║
- * ║                                                              ║
- * ║  ⏱ VELOCIDAD →  duración en la propiedad animation (2.5s)   ║
- * ║                 1.5s = rápido (enérgico)                     ║
- * ║                 2.5s = natural (recomendado)                 ║
- * ║                 3.5s = lento (relajado)                      ║
- * ║                 ⚠ Al cambiar duración, actualizar también   ║
- * ║                   los delay de ring-2 y ring-3:              ║
- * ║                   delay = duración / 3                       ║
- * ╚══════════════════════════════════════════════════════════════╝
+ * ╔════════════════════════════════════════════════════════════════╗
+ * ║            EFECTO LATIDO — PARÁMETROS AJUSTABLES              ║
+ * ╠════════════════════════════════════════════════════════════════╣
+ * ║  🎨 COLOR     →  background-color: rgba(R, G, B, alpha)       ║
+ * ║                  R=250 G=168 B=25 = dorado #faa819             ║
+ * ║                                                                ║
+ * ║  📐 INSET     →  inset en .avatar-ring                        ║
+ * ║                  wrapper=224px | avatar(img+borde)=208px       ║
+ * ║                  inset: 8px  → anillo=208px (borde del avatar) ║
+ * ║                  inset: 0    → anillo=224px (+8px de halo)     ║
+ * ║                  inset:-12px → anillo=248px (+20px de halo)    ║
+ * ║                                                                ║
+ * ║  📐 EXPANSIÓN →  scale al 20% y al 100% del keyframe          ║
+ * ║                  scale(1.90) = expansión recomendada           ║
+ * ║                                                                ║
+ * ║  ⏱ VELOCIDAD  →  duración en animation (2.5s)                 ║
+ * ║                  ⚠ Si cambias la duración actualiza los delay: ║
+ * ║                     delay = duración / 3                       ║
+ * ╚════════════════════════════════════════════════════════════════╝
  */
 .avatar-ring {
   position: absolute;
-  inset: 0;
+
+  /* 📐 INSET — 8px hace que los anillos partan exactamente del borde
+     del avatar (200px imagen + 4px borde × 2 = 208px = wrapper 224px - 8px × 2).
+     Los anillos inician OCULTOS bajo la imagen y emergen al expandirse. */
+  inset: 8px;
+
   border-radius: 50%;
 
-  /* 🎨 COLOR — cambiar rgba() para ajustar color e intensidad */
-  background-color: rgba(250, 168, 25, 0.50);
+  /* 🎨 COLOR — rgba(R, G, B, intensidad) */
+  background-color: rgba(250, 168, 25, 0.65);
 
-  /* ⏱ VELOCIDAD — cambiar 2.5s | cubic-bezier controla la curva de aceleración */
+  /* ⏱ VELOCIDAD — cambiar 2.5s */
   animation: ripplePulse 2.5s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
 
   z-index: 1;
@@ -346,7 +350,7 @@ a {
   will-change: transform, opacity; /* capa GPU — no modificar */
 }
 
-/* ⏱ DELAY — debe ser: duración / 3 = 2.5s / 3 ≈ 0.83s por escalón */
+/* ⏱ DELAY — duración / 3 = 2.5 / 3 ≈ 0.83s por escalón */
 .avatar-ring-2 { animation-delay: 0.83s; }
 .avatar-ring-3 { animation-delay: 1.66s; }
 
@@ -772,12 +776,16 @@ a {
 
 @keyframes ripplePulse {
   0% {
-    transform: scale(1);    /* 📐 INICIO — siempre 1 (tamaño del contenedor) */
-    opacity: 0.70;          /* 🎨 OPACIDAD INICIAL — mismo alpha que background-color */
+    transform: scale(1.00); /* oculto bajo la imagen del avatar */
+    opacity: 0;
+  }
+  20% {
+    transform: scale(1.20); /* 📐 PICO — emergen ~15px fuera del avatar, visibles */
+    opacity: 0.65;          /* 🎨 INTENSIDAD MÁXIMA del pulso */
   }
   100% {
-    transform: scale(1.45); /* 📐 TAMAÑO FINAL — cuánto se expande el pulso */
-    opacity: 0;             /* siempre 0 — el pulso se disuelve al expandirse */
+    transform: scale(1.90); /* 📐 EXPANSIÓN FINAL — cuánto se aleja del avatar */
+    opacity: 0;             /* siempre 0 — el pulso se disuelve */
   }
 }
 
