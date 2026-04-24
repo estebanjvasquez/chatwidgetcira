@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>CIRA — Asistente Virtual CPV</title>
+  <link rel="stylesheet" href="assets/css/kiosk.css">
+</head>
+<body class="page-landing">
+
+  <!-- ── Barra de navegación ─────────────────────────────────── -->
+  <nav class="kiosk-nav" role="navigation" aria-label="Navegación principal">
+    <div class="nav-logo">
+      <img
+        src="assets/img/campet-logo.png"
+        alt="Cámara Petrolera de Venezuela"
+        class="logo-img"
+      >
+    </div>
+
+    <div class="nav-actions">
+      <a href="ayuda.html" class="btn btn-nav" aria-label="Ir a la página de ayuda">
+        <span class="btn-icon" aria-hidden="true">&#9432;</span>
+        <span class="btn-label">Ayuda</span>
+      </a>
+    </div>
+  </nav>
+
+  <!-- ── Contenido principal ────────────────────────────────── -->
+  <main class="landing-main" role="main">
+
+    <!-- Avatar animado -->
+    <section class="avatar-section" aria-label="Bienvenida al asistente CIRA">
+      <div class="avatar-wrapper" role="img" aria-label="Avatar de CIRA">
+        <div class="avatar-glow"   aria-hidden="true"></div>
+        <div class="avatar-ring"   aria-hidden="true"></div>
+        <div class="avatar-ring avatar-ring-2" aria-hidden="true"></div>
+        <div class="avatar-ring avatar-ring-3" aria-hidden="true"></div>
+        <img
+          src="assets/img/cirabot.png"
+          alt="CIRA — Asistente virtual de la Cámara Petrolera de Venezuela"
+          class="avatar-img"
+        >
+      </div>
+
+      <!-- Burbuja descriptiva -->
+      <div class="description-bubble" role="region" aria-label="Descripción del asistente">
+        <p class="description-text">
+          Soy <strong>CIRA</strong>, el asistente virtual de la
+          <strong>Cámara Petrolera de Venezuela</strong>.
+          Búscame empresas, servicios y sectores del directorio petrolero
+          venezolano con solo escribir tu consulta.
+        </p>
+      </div>
+    </section>
+
+    <!-- Botones CTA -->
+    <section class="cta-section" aria-label="Acciones principales">
+      <a
+        href="bot.html"
+        class="btn btn-primary btn-cta"
+        role="button"
+        aria-label="Iniciar conversación con CIRA"
+      >
+        <span class="btn-icon" aria-hidden="true">&#128172;</span>
+        Iniciar conversación
+      </a>
+
+      <a
+        href="ayuda.html"
+        class="btn btn-secondary btn-cta-sec"
+        role="button"
+        aria-label="Ver cómo funciona el asistente"
+      >
+        <span class="btn-icon" aria-hidden="true">&#9432;</span>
+        ¿Cómo funciona?
+      </a>
+    </section>
+
+  </main>
+
+  <!-- ── Pie de página ──────────────────────────────────────── -->
+  <footer class="kiosk-footer" role="contentinfo">
+    <p class="footer-text" aria-live="polite">Toca la pantalla para comenzar</p>
+  </footer>
+
+  <!-- ── Scripts ────────────────────────────────────────────── -->
+  <script src="assets/js/idle-manager.js"></script>
+  <script src="assets/js/kiosk.js"></script>
+  <script>
+    /* Landing: la inactividad solo recarga la página (ya está en inicio) */
+    IdleManager.init({
+      timeout:  120000,   /* 2 minutos */
+      warningAt: 20000,   /* aviso 20 s antes (no hay overlay en landing) */
+      onIdle: function () { location.reload(); }
+    });
+  </script>
+
+</body>
+</html>
