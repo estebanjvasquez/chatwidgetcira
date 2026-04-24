@@ -6,6 +6,15 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <title>CIRA — Cómo funciona</title>
+
+  <!-- Preload de recursos críticos -->
+  <link rel="preload" href="assets/css/kiosk.css"      as="style">
+  <link rel="preload" href="assets/img/campet-logo.png" as="image">
+
+  <!-- Prefetch de la siguiente página más probable -->
+  <link rel="prefetch" href="bot.html">
+  <link rel="prefetch" href="assets/js/chat-widget-kiosk.js">
+
   <link rel="stylesheet" href="assets/css/kiosk.css">
 </head>
 <body class="page-ayuda">
@@ -17,6 +26,7 @@
         src="assets/img/campet-logo.png"
         alt="Cámara Petrolera de Venezuela"
         class="logo-img"
+        decoding="async"
       >
     </div>
 
@@ -25,20 +35,11 @@
     </div>
 
     <div class="nav-actions">
-      <a
-        href="bot.html"
-        class="btn btn-primary btn-nav"
-        aria-label="Ir al asistente CIRA"
-      >
+      <a href="bot.html"   class="btn btn-primary btn-nav" aria-label="Ir al asistente CIRA">
         <span class="btn-icon" aria-hidden="true">&#128172;</span>
         <span class="btn-label">Usar CIRA</span>
       </a>
-
-      <a
-        href="index.html"
-        class="btn btn-nav"
-        aria-label="Volver a la pantalla de inicio"
-      >
+      <a href="index.html" class="btn btn-nav" aria-label="Volver a la pantalla de inicio">
         <span class="btn-icon" aria-hidden="true">&#8962;</span>
         <span class="btn-label">Inicio</span>
       </a>
@@ -48,7 +49,6 @@
   <!-- ── Contenido de ayuda ─────────────────────────────────── -->
   <main class="ayuda-main" role="main">
 
-    <!-- Encabezado -->
     <div class="ayuda-header">
       <h1 class="ayuda-title">¿Cómo funciona CIRA?</h1>
       <p class="ayuda-subtitle">
@@ -58,10 +58,8 @@
       </p>
     </div>
 
-    <!-- Grid de tarjetas informativas -->
     <div class="ayuda-grid" role="list">
 
-      <!-- Tarjeta 1: Qué puede hacer -->
       <div class="ayuda-card" role="listitem">
         <span class="ayuda-card-icon" aria-hidden="true">&#128269;</span>
         <h2 class="ayuda-card-title">¿Qué puede hacer CIRA?</h2>
@@ -74,7 +72,6 @@
         </ul>
       </div>
 
-      <!-- Tarjeta 2: Cómo interactuar -->
       <div class="ayuda-card" role="listitem">
         <span class="ayuda-card-icon" aria-hidden="true">&#128172;</span>
         <h2 class="ayuda-card-title">¿Cómo hablar con CIRA?</h2>
@@ -88,7 +85,6 @@
         </ul>
       </div>
 
-      <!-- Tarjeta 3: Si no responde -->
       <div class="ayuda-card" role="listitem">
         <span class="ayuda-card-icon" aria-hidden="true">&#9889;</span>
         <h2 class="ayuda-card-title">¿Qué hacer si no responde?</h2>
@@ -101,42 +97,29 @@
         </ul>
       </div>
 
-      <!-- Tarjeta 4: Sobre el kiosko -->
       <div class="ayuda-card" role="listitem">
         <span class="ayuda-card-icon" aria-hidden="true">&#127981;</span>
         <h2 class="ayuda-card-title">Sobre este kiosko</h2>
         <p class="ayuda-card-text">
-          Este sistema interactivo fue desarrollado especialmente para el stand de la
+          Este sistema interactivo fue desarrollado para el stand de la
           <strong>Cámara Petrolera de Venezuela</strong> como herramienta
           de consulta del directorio empresarial del sector petrolero nacional.
         </p>
-        <p class="ayuda-card-text" style="margin-top:8px">
+        <p class="ayuda-card-text ayuda-card-text--gap">
           Cada conversación es independiente y privada.
           La sesión se reinicia automáticamente tras un periodo de inactividad
-          para proteger tu privacidad y dejar la pantalla lista para el siguiente usuario.
+          para proteger tu privacidad.
         </p>
       </div>
 
     </div>
 
-    <!-- Botones de acción -->
     <div class="ayuda-actions" role="navigation" aria-label="Acciones de navegación">
-      <a
-        href="bot.html"
-        class="btn btn-primary btn-cta"
-        role="button"
-        aria-label="Ir a usar el asistente CIRA"
-      >
+      <a href="bot.html"   class="btn btn-primary  btn-cta"     role="button" aria-label="Ir al asistente CIRA">
         <span class="btn-icon" aria-hidden="true">&#128172;</span>
         Comenzar a usar CIRA
       </a>
-
-      <a
-        href="index.html"
-        class="btn btn-secondary btn-cta-sec"
-        role="button"
-        aria-label="Volver a la pantalla de inicio"
-      >
+      <a href="index.html" class="btn btn-secondary btn-cta-sec" role="button" aria-label="Volver al inicio">
         <span class="btn-icon" aria-hidden="true">&#8962;</span>
         Volver al inicio
       </a>
@@ -144,15 +127,16 @@
 
   </main>
 
-  <!-- ── Scripts ────────────────────────────────────────────── -->
-  <script src="assets/js/idle-manager.js"></script>
-  <script src="assets/js/kiosk.js"></script>
+  <!-- Scripts defer — no bloquean el render -->
+  <script src="assets/js/idle-manager.js" defer></script>
+  <script src="assets/js/kiosk.js"        defer></script>
   <script>
-    /* Ayuda: sin overlay de aviso, redirige directo al inicio tras 2 min */
-    IdleManager.init({
-      timeout:  120000,
-      warningAt: 20000,
-      onIdle: function () { window.location.href = 'index.html'; }
+    document.addEventListener('DOMContentLoaded', function () {
+      IdleManager.init({
+        timeout:   120000,
+        warningAt:  20000,
+        onIdle: function () { window.location.href = 'index.html'; }
+      });
     });
   </script>
 

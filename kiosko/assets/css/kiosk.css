@@ -87,6 +87,13 @@ body {
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
   user-select: none;
+  /* Entrada CSS pura — no depende de JS, elimina la página en blanco */
+  animation: pageIn 300ms ease both;
+}
+
+/* Salida al navegar — activada por JS añadiendo la clase */
+body.page-exit {
+  animation: pageOut 260ms ease forwards;
 }
 
 img {
@@ -301,19 +308,51 @@ a {
   z-index: 0;
 }
 
-/* Ondas concéntricas tipo latido — 3 anillos desfasados */
+/*
+ * ╔════════════════════════════════════════════════════════════════╗
+ * ║            EFECTO LATIDO — PARÁMETROS AJUSTABLES              ║
+ * ╠════════════════════════════════════════════════════════════════╣
+ * ║  🎨 COLOR     →  background-color: rgba(R, G, B, alpha)       ║
+ * ║                  R=250 G=168 B=25 = dorado #faa819             ║
+ * ║                                                                ║
+ * ║  📐 INSET     →  inset en .avatar-ring                        ║
+ * ║                  wrapper=224px | avatar(img+borde)=208px       ║
+ * ║                  inset: 8px  → anillo=208px (borde del avatar) ║
+ * ║                  inset: 0    → anillo=224px (+8px de halo)     ║
+ * ║                  inset:-12px → anillo=248px (+20px de halo)    ║
+ * ║                                                                ║
+ * ║  📐 EXPANSIÓN →  scale al 20% y al 100% del keyframe          ║
+ * ║                  scale(1.90) = expansión recomendada           ║
+ * ║                                                                ║
+ * ║  ⏱ VELOCIDAD  →  duración en animation (2.5s)                 ║
+ * ║                  ⚠ Si cambias la duración actualiza los delay: ║
+ * ║                     delay = duración / 3                       ║
+ * ╚════════════════════════════════════════════════════════════════╝
+ */
 .avatar-ring {
   position: absolute;
-  inset: 0;
+
+  /* 📐 INSET — 8px hace que los anillos partan exactamente del borde
+     del avatar (200px imagen + 4px borde × 2 = 208px = wrapper 224px - 8px × 2).
+     Los anillos inician OCULTOS bajo la imagen y emergen al expandirse. */
+  inset: 8px;
+
   border-radius: 50%;
-  border: 2px solid rgba(250, 168, 25, 0.70);
-  animation: ripplePulse 2.4s cubic-bezier(0.20, 0.60, 0.40, 1) infinite;
+
+  /* 🎨 COLOR — rgba(R, G, B, intensidad) */
+  background-color: rgba(250, 168, 25, 0.65);
+
+  /* ⏱ VELOCIDAD — cambiar 2.5s */
+  animation: ripplePulse 2.5s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
+
   z-index: 1;
   pointer-events: none;
-  will-change: transform, opacity; /* promueve a capa GPU, elimina repaint */
+  will-change: transform, opacity; /* capa GPU — no modificar */
 }
-.avatar-ring-2 { animation-delay: 0.80s; }
-.avatar-ring-3 { animation-delay: 1.60s; }
+
+/* ⏱ DELAY — duración / 3 = 2.5 / 3 ≈ 0.83s por escalón */
+.avatar-ring-2 { animation-delay: 0.83s; }
+.avatar-ring-3 { animation-delay: 1.66s; }
 
 .avatar-img {
   position: relative;
@@ -499,9 +538,8 @@ a {
   line-height: 1.65;
 }
 
-.ayuda-card-text strong {
-  color: var(--clr-text);
-}
+.ayuda-card-text strong     { color: var(--clr-text); }
+.ayuda-card-text--gap       { margin-top: 8px; }
 
 .ayuda-card-list {
   list-style: none;
@@ -539,8 +577,8 @@ a {
   position: fixed;
   inset: 0;
   background: var(--clr-bg-overlay);
-  backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -609,20 +647,118 @@ a {
 
 .btn-idle-home {
   font-size: var(--fz-xs);
-  min-height: auto;
+  min-height: unset;
   padding: 10px 20px;
   color: var(--clr-text-muted);
   border-color: transparent;
 }
 
-/* ── Chat Widget Kiosk — overrides de tamaño ────────────────────── */
-/* Los estilos base los inyecta chat-widget-kiosk.js;
-   aquí solo sobreponemos lo que cambia en el contexto kiosk. */
-.ck-bubble {
-  font-size: 1.05rem;
+/* ── Chat Widget — estilos en CSS (elimina inyección JS y FOUC) ─── */
+.ck-shell {
+  display: flex; flex-direction: column;
+  height: 100%; background: #0d1117;
+  font-family: var(--font); overflow: hidden;
+}
+.ck-body {
+  flex: 1; overflow-y: auto;
+  padding: 20px 22px;
+  display: flex; flex-direction: column; gap: 14px;
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(250,168,25,.28) transparent;
+}
+.ck-body::-webkit-scrollbar { width: 5px; }
+.ck-body::-webkit-scrollbar-thumb { background: rgba(250,168,25,.28); border-radius: 3px; }
+.ck-foot {
+  padding: 14px 18px; background: #1e293b;
+  border-top: 1px solid rgba(255,255,255,.08); flex-shrink: 0;
+}
+.ck-input-row { display: flex; align-items: flex-end; gap: 10px; }
+.ck-textarea {
+  flex: 1; background: #0f172a;
+  border: 2px solid rgba(255,255,255,.10); border-radius: 14px;
+  color: #f1f5f9; font-size: 1.05rem; padding: 13px 16px;
+  resize: none; outline: none;
+  min-height: 50px; max-height: 128px;
+  line-height: 1.5; font-family: var(--font);
+  transition: border-color 180ms;
+}
+.ck-textarea:focus        { border-color: var(--clr-primary); }
+.ck-textarea::placeholder { color: rgba(255,255,255,.30); }
+.ck-send {
+  width: 50px; height: 50px; border-radius: 50%;
+  background: var(--clr-primary); border: none; color: #111;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: transform 150ms, background 150ms;
+  -webkit-tap-highlight-color: transparent;
+}
+.ck-send:active   { transform: scale(.92); background: var(--clr-primary-dark); }
+.ck-send:disabled { opacity: .45; cursor: not-allowed; }
+.ck-send svg      { pointer-events: none; }
+
+.ck-welcome {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 12px; padding: 18px 0 6px; text-align: center;
+}
+.ck-welcome-avatar {
+  width: 76px; height: 76px; border-radius: 50%; object-fit: cover;
+  border: 3px solid var(--clr-primary);
+  box-shadow: 0 0 22px var(--clr-primary-glow);
+}
+.ck-welcome-name  { font-size: 1.05rem; font-weight: 700; color: #f1f5f9; }
+.ck-welcome-text  { font-size: .98rem; color: #94a3b8; line-height: 1.65; max-width: 480px; }
+.ck-welcome-text strong { color: #f1f5f9; }
+
+.ck-row       { display: flex; gap: 8px; align-items: flex-end; max-width: 88%; }
+.ck-row.ck-user { align-self: flex-end; flex-direction: row-reverse; max-width: 78%; }
+.ck-avatar    { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 2px solid var(--clr-primary); }
+.ck-bubble    { padding: 13px 17px; border-radius: 18px; font-size: 1.05rem; line-height: 1.65; word-wrap: break-word; overflow-wrap: break-word; }
+.ck-bot-bub   { background: #1e293b; color: #f1f5f9; border: 1px solid rgba(255,255,255,.07); border-bottom-left-radius: 4px; }
+.ck-usr-bub   { background: var(--clr-primary); color: #111; font-weight: 500; border-bottom-right-radius: 4px; }
+.ck-bubble a  { color: var(--clr-primary); }
+.ck-usr-bub a { color: #111; text-decoration: underline; }
+
+.ck-spin-row  { display: flex; gap: 8px; align-items: center; max-width: 88%; }
+.ck-spin-bub  { background: #1e293b; border: 1px solid rgba(255,255,255,.07); border-radius: 18px; border-bottom-left-radius: 4px; padding: 13px 18px; display: flex; align-items: center; gap: 5px; }
+.ck-dot       { width: 8px; height: 8px; background: var(--clr-primary); border-radius: 50%; animation: ck-b 1.2s infinite ease-in-out; will-change: transform, opacity; }
+.ck-dot:nth-child(2) { animation-delay: .2s; }
+.ck-dot:nth-child(3) { animation-delay: .4s; }
+@keyframes ck-b {
+  0%,60%,100% { transform: translateY(0);    opacity: .55; }
+  30%          { transform: translateY(-6px); opacity: 1;   }
+}
+.ck-bubble .empresa-card,
+.ck-bubble .result-card {
+  background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.09);
+  border-radius: 10px; padding: 11px 14px; margin: 7px 0;
+}
+.ck-bubble .empresa-card h3,
+.ck-bubble .result-card h3 { color: var(--clr-primary); font-size: .95rem; margin-bottom: 4px; }
+.ck-bubble .empresa-card p,
+.ck-bubble .result-card p  { font-size: .88rem; color: #94a3b8; margin: 2px 0; }
+
+/* ── Reducción de coste GPU en móvil/tablet ─────────────────────── */
+@media (hover: none), (max-width: 768px) {
+  .description-bubble,
+  .ayuda-card,
+  .idle-card {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: rgba(24, 36, 55, 0.98); /* compensa con fondo más opaco */
+  }
 }
 
 /* ── Animaciones ─────────────────────────────────────────────────── */
+@keyframes pageIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes pageOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
 @keyframes avatarPopIn {
   from { opacity: 0; transform: scale(0.55) translateY(18px); }
   to   { opacity: 1; transform: scale(1)    translateY(0);    }
@@ -639,8 +775,18 @@ a {
 }
 
 @keyframes ripplePulse {
-  0%   { transform: scale(0.95); opacity: 0.75; }
-  100% { transform: scale(2.10); opacity: 0;    }
+  0% {
+    transform: scale(1.00); /* oculto bajo la imagen del avatar */
+    opacity: 0;
+  }
+  20% {
+    transform: scale(1.20); /* 📐 PICO — emergen ~15px fuera del avatar, visibles */
+    opacity: 0.65;          /* 🎨 INTENSIDAD MÁXIMA del pulso */
+  }
+  100% {
+    transform: scale(1.90); /* 📐 EXPANSIÓN FINAL — cuánto se aleja del avatar */
+    opacity: 0;             /* siempre 0 — el pulso se disuelve */
+  }
 }
 
 @keyframes fadeSlideUp {
