@@ -131,7 +131,11 @@
       IdleManager.init({
         timeout:   120000,
         warningAt:  20000,
-        onIdle: function () { window.location.href = 'index.html'; }
+        onIdle: function () {
+          fetch('index.html', { method: 'HEAD', cache: 'no-store' })
+            .then(function (r) { if (r.ok) window.location.href = 'index.html'; })
+            .catch(function () { /* servidor no disponible — el idle volverá a disparar */ });
+        }
       });
     });
   </script>

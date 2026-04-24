@@ -122,16 +122,36 @@
   <!-- Init del idle — DOMContentLoaded garantiza que los defer ya corrieron -->
   <script>
     document.addEventListener('DOMContentLoaded', function () {
-      IdleManager.init({
+      var IDLE_CFG = {
         timeout:     90000,
         warningAt:   15000,
         warningEl:   document.getElementById('idle-overlay'),
-        countdownEl: document.getElementById('idle-countdown'),
-        onIdle: function () {
-          if (window.CiraKiosk) window.CiraKiosk.reset();
-          window.location.href = 'index.html';
-        }
-      });
+        countdownEl: document.getElementById('idle-countdown')
+      };
+
+      function goHome() {
+        if (window.CiraKiosk) window.CiraKiosk.reset();
+        /* Verifica conectividad antes de navegar para evitar chrome-error:// */
+        fetch('index.html', { method: 'HEAD', cache: 'no-store' })
+          .then(function (r) {
+            if (r.ok) {
+              window.location.href = 'index.html';
+            } else {
+              scheduleRetry();
+            }
+          })
+          .catch(function () { scheduleRetry(); });
+      }
+
+      function scheduleRetry() {
+        /* Servidor no disponible — reintenta en 30 s sin mostrar error page */
+        IdleManager.init(Object.assign({}, IDLE_CFG, {
+          timeout: 30000, warningAt: 8000, onIdle: goHome
+        }));
+      }
+
+      IDLE_CFG.onIdle = goHome;
+      IdleManager.init(IDLE_CFG);
     });
   </script>
 
