@@ -1,152 +1,182 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <title>CIRA — Chat</title>
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, user-scalable=no"
+        />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <title>CIRA — Chat</title>
 
-  <!-- Preconnect: establece TCP/TLS con el webhook antes del primer mensaje -->
-  <link rel="preconnect" href="https://vmi2945958.contaboserver.net">
+        <!-- Preconnect: establece TCP/TLS con el webhook antes del primer mensaje -->
+        <link rel="preconnect" href="https://vmi2945958.contaboserver.net" />
 
-  <!-- Preload de recursos críticos -->
-  <link rel="preload" href="assets/css/kiosk.css"      as="style">
-  <link rel="preload" href="assets/img/cirabot.png"     as="image" fetchpriority="high">
-  <link rel="preload" href="assets/img/campet-logo.png" as="image">
+        <!-- Preload de recursos críticos -->
+        <link rel="preload" href="assets/css/kiosk.css" as="style" />
+        <link
+            rel="preload"
+            href="assets/img/cirabot.png"
+            as="image"
+            fetchpriority="high"
+        />
+        <link rel="preload" href="assets/img/campet-logo.png" as="image" />
 
-  <link rel="stylesheet" href="assets/css/kiosk.css">
-</head>
-<body class="page-bot">
-
-  <!-- ── Barra de navegación ─────────────────────────────────── -->
-  <nav class="kiosk-nav" role="navigation" aria-label="Navegación del bot">
-    <div class="nav-logo">
-      <img
-        src="assets/img/campet-logo.png"
-        alt="Cámara Petrolera de Venezuela"
-        class="logo-img"
-        decoding="async"
-      >
-    </div>
-
-    <div class="nav-center">
-      <span class="nav-title">
-        <img
-          src="assets/img/cirabot.png"
-          alt=""
-          class="nav-avatar"
-          aria-hidden="true"
-          decoding="async"
+        <link rel="stylesheet" href="assets/css/kiosk.css" />
+    </head>
+    <body class="page-bot">
+        <!-- ── Barra de navegación ─────────────────────────────────── -->
+        <nav
+            class="kiosk-nav"
+            role="navigation"
+            aria-label="Navegación del bot"
         >
-        CIRA Asistente
-      </span>
-    </div>
+            <div class="nav-logo">
+                <img
+                    src="assets/img/campet-logo.png"
+                    alt="Cámara Petrolera de Venezuela"
+                    class="logo-img"
+                    decoding="async"
+                />
+            </div>
 
-    <div class="nav-actions">
-      <button
-        type="button"
-        class="btn btn-nav"
-        onclick="resetConversation()"
-        aria-label="Iniciar nueva conversación"
-        title="Nueva conversación"
-      >
-        <span class="btn-icon" aria-hidden="true">&#8635;</span>
-        <span class="btn-label">Nueva</span>
-      </button>
+            <div class="nav-center">
+                <span class="nav-title">
+                    <img
+                        src="assets/img/cirabot.png"
+                        alt=""
+                        class="nav-avatar"
+                        aria-hidden="true"
+                        decoding="async"
+                    />
+                    CIRA Asistente
+                </span>
+            </div>
 
-      <a href="ayuda.html" class="btn btn-nav" aria-label="Ir a la página de ayuda" title="Ayuda">
-        <span class="btn-icon" aria-hidden="true">&#9432;</span>
-        <span class="btn-label">Ayuda</span>
-      </a>
+            <div class="nav-actions">
+                <button
+                    type="button"
+                    class="btn btn-nav"
+                    onclick="resetConversation()"
+                    aria-label="Iniciar nueva conversación"
+                    title="Nueva conversación"
+                >
+                    <span class="btn-icon" aria-hidden="true">&#8635;</span>
+                    <span class="btn-label">Nueva</span>
+                </button>
 
-      <a href="index.html" class="btn btn-nav" aria-label="Volver a la pantalla de inicio" title="Inicio">
-        <span class="btn-icon" aria-hidden="true">&#8962;</span>
-        <span class="btn-label">Inicio</span>
-      </a>
-    </div>
-  </nav>
+                <a
+                    href="ayuda.html"
+                    class="btn btn-nav"
+                    aria-label="Ir a la página de ayuda"
+                    title="Ayuda"
+                >
+                    <span class="btn-icon" aria-hidden="true">&#9432;</span>
+                    <span class="btn-label">Ayuda</span>
+                </a>
 
-  <!-- ── Contenedor del chat ────────────────────────────────── -->
-  <main class="bot-main" role="main">
-    <div id="cira-chat-kiosk" class="chat-container" aria-label="Chat con CIRA"></div>
-  </main>
+                <a
+                    href="index.html"
+                    class="btn btn-nav"
+                    aria-label="Volver a la pantalla de inicio"
+                    title="Inicio"
+                >
+                    <span class="btn-icon" aria-hidden="true">&#8962;</span>
+                    <span class="btn-label">Inicio</span>
+                </a>
+            </div>
+        </nav>
 
-  <!-- ── Overlay de inactividad ────────────────────────────── -->
-  <div
-    id="idle-overlay"
-    class="idle-overlay"
-    role="alertdialog"
-    aria-modal="true"
-    aria-labelledby="idle-title"
-    aria-describedby="idle-desc"
-    aria-hidden="true"
-  >
-    <div class="idle-card">
-      <div class="idle-avatar" aria-hidden="true">
-        <img src="assets/img/cirabot.png" alt="" class="idle-avatar-img" decoding="async">
-      </div>
-      <h2 class="idle-title" id="idle-title">¿Sigues ahí?</h2>
-      <p class="idle-desc" id="idle-desc">
-        La sesión se reiniciará en
-        <strong><span id="idle-countdown">15</span></strong>
-        segundos por inactividad
-      </p>
-      <button
-        type="button"
-        class="btn btn-primary btn-idle-continue"
-        onclick="IdleManager.extend()"
-        aria-label="Continuar usando el asistente"
-      >
-        Continuar conversación
-      </button>
-      <a
-        href="index.html"
-        class="btn btn-secondary btn-idle-home"
-        aria-label="Volver a la pantalla de inicio"
-      >
-        Volver al inicio
-      </a>
-    </div>
-  </div>
+        <!-- ── Contenedor del chat ────────────────────────────────── -->
+        <main class="bot-main" role="main">
+            <div
+                id="cira-chat-kiosk"
+                class="chat-container"
+                aria-label="Chat con CIRA"
+            ></div>
+        </main>
 
-  <!-- Config del widget — inline, se ejecuta antes de los scripts defer -->
-  <script>
-    window.ChatWidgetConfig = {
-      webhookUrl:    'https://vmi2945958.contaboserver.net/webhook/cira-botV2',
-      avatar:        'assets/img/cirabot.png',
-      mode:          'inline',
-      mountSelector: '#cira-chat-kiosk',
-      style:         { primaryColor: '#faa819' }
-    };
+        <!-- ── Overlay de inactividad ────────────────────────────── -->
+        <div
+            id="idle-overlay"
+            class="idle-overlay"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="idle-title"
+            aria-describedby="idle-desc"
+            aria-hidden="true"
+        >
+            <div class="idle-card">
+                <div class="idle-avatar" aria-hidden="true">
+                    <img
+                        src="assets/img/cirabot.png"
+                        alt=""
+                        class="idle-avatar-img"
+                        decoding="async"
+                    />
+                </div>
+                <h2 class="idle-title" id="idle-title">¿Sigues ahí?</h2>
+                <p class="idle-desc" id="idle-desc">
+                    La sesión se reiniciará en
+                    <strong><span id="idle-countdown">15</span></strong>
+                    segundos por inactividad
+                </p>
+                <button
+                    type="button"
+                    class="btn btn-primary btn-idle-continue"
+                    onclick="IdleManager.extend()"
+                    aria-label="Continuar usando el asistente"
+                >
+                    Continuar conversación
+                </button>
+                <a
+                    href="index.html"
+                    class="btn btn-secondary btn-idle-home"
+                    aria-label="Volver a la pantalla de inicio"
+                >
+                    Volver al inicio
+                </a>
+            </div>
+        </div>
 
-    /* Global para onclick — seguro porque el usuario no puede pulsarlo
+        <!-- Config del widget — inline, se ejecuta antes de los scripts defer -->
+        <script>
+            window.ChatWidgetConfig = {
+                webhookUrl:
+                    "https://vmi2945958.contaboserver.net/webhook/cira-botV2",
+                avatar: "assets/img/cirabot.png",
+                mode: "inline",
+                mountSelector: "#cira-chat-kiosk",
+                style: { primaryColor: "#faa819" },
+            };
+
+            /* Global para onclick — seguro porque el usuario no puede pulsarlo
        antes de que la página esté renderizada y el widget cargado */
-    function resetConversation() {
-      if (window.CiraKiosk) window.CiraKiosk.reset();
-    }
-  </script>
+            function resetConversation() {
+                if (window.CiraKiosk) window.CiraKiosk.reset();
+            }
+        </script>
 
-  <!-- Scripts defer — no bloquean el parser ni el render -->
-  <script src="assets/js/chat-widget-kiosk.js" defer></script>
-  <script src="assets/js/idle-manager.js"       defer></script>
-  <script src="assets/js/kiosk.js"              defer></script>
+        <!-- Scripts defer — no bloquean el parser ni el render -->
+        <script src="assets/js/chat-widget-kiosk.js" defer></script>
+        <script src="assets/js/idle-manager.js" defer></script>
+        <script src="assets/js/kiosk.js" defer></script>
 
-  <!-- Init del idle — DOMContentLoaded garantiza que los defer ya corrieron -->
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      IdleManager.init({
-        timeout:     90000,
-        warningAt:   15000,
-        warningEl:   document.getElementById('idle-overlay'),
-        countdownEl: document.getElementById('idle-countdown'),
-        onIdle: function () {
-          if (window.CiraKiosk) window.CiraKiosk.reset();
-          window.location.href = 'index.html';
-        }
-      });
-    });
-  </script>
-
-</body>
+        <!-- Init del idle — DOMContentLoaded garantiza que los defer ya corrieron -->
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                IdleManager.init({
+                    timeout: 90000,
+                    warningAt: 15000,
+                    warningEl: document.getElementById("idle-overlay"),
+                    countdownEl: document.getElementById("idle-countdown"),
+                    onIdle: function () {
+                        if (window.CiraKiosk) window.CiraKiosk.reset();
+                        window.location.href = "index.html";
+                    },
+                });
+            });
+        </script>
+    </body>
 </html>

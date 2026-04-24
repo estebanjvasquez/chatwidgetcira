@@ -343,3 +343,67 @@ chat-widget-kiosk.js
 ================================================================================
 FIN DEL CONTEXTO
 ================================================================================
+
+================================================================================
+CONTEXTO ACTUALIZADO — Mayo 2025
+================================================================================
+
+────────────────────────────────────────────────────────────────────────────────
+11. MODIFICACIONES RESPONSIVE + KEYBOARD MÓVIL
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEMAS ENCONTRADOS:
+1. Botones y texto muy grandes para pantallas pequeñas (móvil/tablet)
+2. No se activaba el teclado virtual en dispositivos móviles
+3. Botones ocultos por falta de diseño responsivo
+
+ARCHIVOS MODIFICADOS:
+
+A) kiosko/assets/css/kiosk.css
+   - Agregada nueva sección @media (max-width: 768px) al final
+   - Variables reducidas para pantallas pequeñas:
+     * --btn-min-h: 64px → 48px
+     * --btn-cta-h: 80px → 56px
+     * --fz-lg: 1.4rem → 1.15rem
+     * --fz-xl: 2rem → 1.5rem
+   - Chat widget responsivo:
+     * .ck-textarea: min-height 50px → 42px
+     * .ck-send: 50px → 42px
+     * .ck-bubble: font-size 1.05rem → 0.9rem
+     * .ck-avatar: 34px → 28px
+
+B) kiosko/assets/js/chat-widget-kiosk.js
+   - Agregados atributos al textarea en buildShell():
+     inputmode="text" type="text"
+   - Esto activa el teclado虚拟 en dispositivos móviles
+
+C) kiosko/*.html (bot.html, index.html, ayuda.html)
+   - Modificado viewport meta tag:
+     De: content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+     A: content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes"
+   - Permite zoom manual en pantallas pequeñas
+
+NOTAS:
+- Los efectos de latido (avatar-ring) y flotar (avatarFloat) se mantienen correctos
+- El diseño grandes (kiosko 90x120cm) no se ve afectado por estos cambios
+- Los cambios solo aplican cuando ancho < 768px
+
+────────────────────────────────────────────────────────────────────────────────
+12. ARCHIVOS DEL PROYECTO
+────────────────────────────────────────────────────────────────────────────────
+
+Directorio raíz (chatwidgetcira/):
+  ├── chat-widget-v2.js     → Widget original (para otros usos)
+  ├── kiosko/               → Experiencia kiosko (los cambios reciente aquí)
+  │   ├── index.html
+  │   ├── bot.html
+  │   ├── ayuda.html
+  │   └── assets/
+  │       ├── css/kiosk.css
+  │       └── js/chat-widget-kiosk.js
+  ├── contexto.txt          → Este archivo
+  └── ...
+
+================================================================================
+FIN — MODIFICACIONES Mayo 2025
+================================================================================
