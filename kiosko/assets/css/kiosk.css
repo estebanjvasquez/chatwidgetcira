@@ -308,19 +308,47 @@ a {
   z-index: 0;
 }
 
-/* Ondas concéntricas tipo latido — 3 anillos desfasados */
+/*
+ * ╔══════════════════════════════════════════════════════════════╗
+ * ║           EFECTO LATIDO — PARÁMETROS AJUSTABLES             ║
+ * ╠══════════════════════════════════════════════════════════════╣
+ * ║  🎨 COLOR    →  background-color: rgba(R, G, B, alpha)      ║
+ * ║                 R=250 G=168 B=25 = dorado #faa819            ║
+ * ║                 alpha = intensidad del pulso (0.0 – 1.0)    ║
+ * ║                                                              ║
+ * ║  📐 TAMAÑO   →  scale() en @keyframes ripplePulse al 100%   ║
+ * ║                 1.40 = expansión del 40% (sutil)             ║
+ * ║                 1.60 = expansión del 60% (notable)           ║
+ * ║                 1.90 = expansión del 90% (amplia)            ║
+ * ║                                                              ║
+ * ║  ⏱ VELOCIDAD →  duración en la propiedad animation (2.5s)   ║
+ * ║                 1.5s = rápido (enérgico)                     ║
+ * ║                 2.5s = natural (recomendado)                 ║
+ * ║                 3.5s = lento (relajado)                      ║
+ * ║                 ⚠ Al cambiar duración, actualizar también   ║
+ * ║                   los delay de ring-2 y ring-3:              ║
+ * ║                   delay = duración / 3                       ║
+ * ╚══════════════════════════════════════════════════════════════╝
+ */
 .avatar-ring {
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  border: 2px solid rgba(250, 168, 25, 0.70);
-  animation: ripplePulse 2.4s cubic-bezier(0.20, 0.60, 0.40, 1) infinite;
+
+  /* 🎨 COLOR — cambiar rgba() para ajustar color e intensidad */
+  background-color: rgba(250, 168, 25, 0.50);
+
+  /* ⏱ VELOCIDAD — cambiar 2.5s | cubic-bezier controla la curva de aceleración */
+  animation: ripplePulse 2.5s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
+
   z-index: 1;
   pointer-events: none;
-  will-change: transform, opacity; /* promueve a capa GPU, elimina repaint */
+  will-change: transform, opacity; /* capa GPU — no modificar */
 }
-.avatar-ring-2 { animation-delay: 0.80s; }
-.avatar-ring-3 { animation-delay: 1.60s; }
+
+/* ⏱ DELAY — debe ser: duración / 3 = 2.5s / 3 ≈ 0.83s por escalón */
+.avatar-ring-2 { animation-delay: 0.83s; }
+.avatar-ring-3 { animation-delay: 1.66s; }
 
 .avatar-img {
   position: relative;
@@ -743,8 +771,14 @@ a {
 }
 
 @keyframes ripplePulse {
-  0%   { transform: scale(0.95); opacity: 0.75; }
-  100% { transform: scale(2.10); opacity: 0;    }
+  0% {
+    transform: scale(1);    /* 📐 INICIO — siempre 1 (tamaño del contenedor) */
+    opacity: 0.70;          /* 🎨 OPACIDAD INICIAL — mismo alpha que background-color */
+  }
+  100% {
+    transform: scale(1.45); /* 📐 TAMAÑO FINAL — cuánto se expande el pulso */
+    opacity: 0;             /* siempre 0 — el pulso se disuelve al expandirse */
+  }
 }
 
 @keyframes fadeSlideUp {
