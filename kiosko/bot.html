@@ -11,9 +11,10 @@
   <link rel="preconnect" href="https://vmi2945958.contaboserver.net">
 
   <!-- Preload de recursos críticos -->
-  <link rel="preload" href="assets/css/kiosk.css"      as="style">
-  <link rel="preload" href="assets/img/cirabot.png"     as="image" fetchpriority="high">
-  <link rel="preload" href="assets/img/campet-logo.png" as="image">
+  <link rel="preload" href="assets/css/kiosk.css"           as="style">
+  <link rel="preload" href="assets/img/cirabot.png"          as="image" fetchpriority="high">
+  <link rel="preload" href="assets/img/campet-logo.png"      as="image">
+  <link rel="preload" href="assets/img/banner-ve2026.jpg"    as="image">
 
   <link rel="stylesheet" href="assets/css/kiosk.css">
 </head>
@@ -53,6 +54,18 @@
       </a>
     </div>
   </nav>
+
+  <!-- ── Capa 0: Branding del evento (visible bajo el input) ── -->
+  <div class="bot-brand-layer" aria-hidden="true">
+    <div class="bot-brand-graphic">
+      <div class="bot-brand-info">
+        <span class="brand-event-name">Venezuela Energ&eacute;tica 2026</span>
+        <span class="brand-event-sub">Integraci&oacute;n y Competitividad en el Mercado Global</span>
+        <span class="brand-event-meta">27&nbsp;&middot;&nbsp;abril&nbsp;&middot;&nbsp;2026&nbsp;&nbsp;&middot;&nbsp;&nbsp;Hotel Eurobuilding&nbsp;&middot;&nbsp;Caracas</span>
+      </div>
+    </div>
+    <div class="bot-brand-sponsors"></div>
+  </div>
 
   <!-- ── Contenedor del chat ────────────────────────────────── -->
   <main class="bot-main" role="main">

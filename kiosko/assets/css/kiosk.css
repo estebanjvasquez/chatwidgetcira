@@ -27,8 +27,9 @@
   --clr-border-focus: rgba(250, 168, 25, 0.45);
 
   /* Layout */
-  --nav-h:    60px;
-  --foot-h:   48px;
+  --nav-h:      60px;
+  --foot-h:     48px;
+  --bot-split:  58vh;   /* altura donde aparece el input (ergonómico en pantalla 1080×1920) */
 
   /* Botones */
   --btn-min-h:   52px;
@@ -629,16 +630,23 @@ a {
   border-color: transparent;
 }
 
-/* ── Chat Widget — estilos en CSS (elimina inyección JS y FOUC) ─── */
+/* ── Chat Widget — modelo de tres capas ─────────────────────────── */
+
+/* Capa 1: ventana de conversación — ocupa la mitad superior de la pantalla */
 .ck-shell {
+  position: fixed;
+  top: var(--nav-h); left: 0; right: 0;
+  height: calc(var(--bot-split) - var(--nav-h));
+  z-index: 10;
   display: flex; flex-direction: column;
-  flex: 1; min-height: 0;
   background: #0d1117;
   font-family: var(--font); overflow: hidden;
+  border-bottom: 2px solid rgba(250, 168, 25, 0.28);
 }
+
 .ck-body {
   flex: 1; min-height: 0; overflow-y: auto;
-  padding: 20px 22px 96px;
+  padding: 20px 22px 20px;
   display: flex; flex-direction: column; gap: 14px;
   scroll-behavior: smooth;
   scrollbar-width: thin;
@@ -647,15 +655,16 @@ a {
 .ck-body::-webkit-scrollbar { width: 5px; }
 .ck-body::-webkit-scrollbar-thumb { background: rgba(250,168,25,.28); border-radius: 3px; }
 
-/* Barra de entrada flotante — siempre visible sobre el contenido */
+/* Capa 2: barra de entrada — fija en el punto de corte ergonómico */
 .ck-foot {
   position: fixed;
-  bottom: 0; left: 0; right: 0;
-  z-index: 200;
+  top: var(--bot-split); left: 0; right: 0;
+  z-index: 20;
   padding: 12px 18px;
   background: #1e293b;
-  border-top: 1px solid rgba(255,255,255,.10);
-  box-shadow: 0 -6px 28px rgba(0, 0, 0, 0.55);
+  border-top: 2px solid rgba(250, 168, 25, 0.30);
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.60);
 }
 .ck-input-row { display: flex; align-items: flex-end; gap: 10px; }
 .ck-textarea {
@@ -720,6 +729,92 @@ a {
 .ck-bubble .result-card h3 { color: var(--clr-primary); font-size: .95rem; margin-bottom: 4px; }
 .ck-bubble .empresa-card p,
 .ck-bubble .result-card p  { font-size: .88rem; color: #94a3b8; margin: 2px 0; }
+
+/* ── Capa 0: Branding — zona inferior de la pantalla ───────────── */
+.bot-brand-layer {
+  position: fixed;
+  top: var(--bot-split);
+  left: 0; right: 0; bottom: 0;
+  z-index: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Zona gráfica: banner del evento como fondo (área del logo CPV) */
+.bot-brand-graphic {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background:
+    url('../img/banner-ve2026.jpg') 8% 0% / cover no-repeat,
+    var(--clr-bg-deep);
+}
+
+/* Gradiente: oscurece tope (bajo el input) y base (para el texto) */
+.bot-brand-graphic::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    rgba(13, 17, 23, 0.65)  0%,
+    rgba(13, 17, 23, 0.08) 28%,
+    rgba(13, 17, 23, 0.08) 58%,
+    rgba(13, 17, 23, 0.72) 84%,
+    rgba(13, 17, 23, 0.94) 100%
+  );
+}
+
+/* Información del evento superpuesta sobre el gráfico */
+.bot-brand-info {
+  position: absolute;
+  bottom: 16px;
+  left: 0; right: 0;
+  padding: 0 32px;
+  text-align: center;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.brand-event-name {
+  font-size: clamp(1.1rem, 3vw, 1.8rem);
+  font-weight: 900;
+  color: #ffffff;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  text-shadow: 0 2px 14px rgba(0,0,0,0.90);
+  line-height: 1.15;
+}
+
+.brand-event-sub {
+  font-size: clamp(0.78rem, 1.8vw, 0.95rem);
+  color: rgba(255,255,255,0.82);
+  text-shadow: 0 1px 6px rgba(0,0,0,0.80);
+  letter-spacing: 0.02em;
+}
+
+.brand-event-meta {
+  margin-top: 3px;
+  font-size: clamp(0.72rem, 1.6vw, 0.88rem);
+  color: var(--clr-primary);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-shadow: 0 1px 8px rgba(0,0,0,0.75);
+}
+
+/* Franja de patrocinadores: muestra la franja blanca del banner a escala kiosko */
+.bot-brand-sponsors {
+  height: 72px;
+  flex-shrink: 0;
+  background:
+    url('../img/banner-ve2026.jpg') center bottom / 1080px auto no-repeat;
+  background-color: #f8f7f3;
+}
 
 /* ── Pantallas pequeñas: ocultar etiquetas de botones nav ──────── */
 @media (max-width: 540px) {
