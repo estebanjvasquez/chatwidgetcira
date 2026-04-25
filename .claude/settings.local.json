@@ -12,7 +12,13 @@
       "Read(//c/Program Files/Google/Chrome/**)",
       "Read(//c/Program Files \\(x86\\)/Google/Chrome/**)",
       "Bash(powershell -Command \"Get-ItemProperty 'HKLM:\\\\\\\\SOFTWARE\\\\\\\\Microsoft\\\\\\\\Windows\\\\\\\\CurrentVersion\\\\\\\\App Paths\\\\\\\\chrome.exe' | Select-Object -ExpandProperty '\\(default\\)'\")",
-      "Bash(powershell -Command ' *)"
+      "Bash(powershell -Command ' *)",
+      "Read(//c/Users/EstebanVasquez/**)",
+      "Bash(powershell -Command \"Get-ChildItem -Path 'C:\\\\Users\\\\EstebanVasquez' -Recurse -Filter '*.svg' -ErrorAction SilentlyContinue | Select-Object FullName | Format-List\")",
+      "Bash(powershell -Command \"Get-ChildItem -Path 'C:\\\\Users\\\\EstebanVasquez' -Recurse -Filter '*Banner*Kiosk*' -ErrorAction SilentlyContinue | Select-Object FullName; Get-ChildItem -Path 'C:\\\\Users\\\\EstebanVasquez' -Recurse -Filter '*Perfil*' -ErrorAction SilentlyContinue | Select-Object FullName\")",
+      "Bash(powershell -Command \"Get-ChildItem -Path 'C:\\\\Users\\\\EstebanVasquez\\\\Downloads\\\\chatwidgetcira-development \\(2\\)\\\\chatwidgetcira-development\\\\kiosko\\\\assets\\\\img\\\\' | Select-Object Name, Length\")",
+      "Bash(powershell -Command \"Copy-Item -Path 'C:\\\\Users\\\\EstebanVasquez\\\\Downloads\\\\chatwidgetcira-development \\(2\\)\\\\chatwidgetcira-development\\\\kiosko\\\\assets\\\\img\\\\Perfil de Afiliados - Banner Kiosk.svg' -Destination 'C:\\\\Users\\\\EstebanVasquez\\\\OneDrive - MSFT\\\\Documents\\\\GitHub\\\\chatwidgetcira\\\\kiosko\\\\assets\\\\img\\\\Perfil de Afiliados - Banner Kiosk.svg' -Force; Write-Host 'Copiado OK'\")",
+      "Bash(powershell -Command \"Rename-Item -Path 'C:\\\\Users\\\\EstebanVasquez\\\\OneDrive - MSFT\\\\Documents\\\\GitHub\\\\chatwidgetcira\\\\kiosko\\\\assets\\\\img\\\\Perfil de Afiliados - Banner Kiosk.svg' -NewName 'banner-afiliados.svg' -Force; Write-Host 'OK'\")"
     ]
   }
 }

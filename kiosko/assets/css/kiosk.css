@@ -741,30 +741,14 @@ a {
   overflow: hidden;
 }
 
-/* Zona gráfica: banner del evento como fondo — imagen portrait 1080×734 */
+/* Zona gráfica: banner vectorial — viewBox 1800×600, fondo dorado propio */
 .bot-brand-graphic {
   flex: 1;
   position: relative;
   overflow: hidden;
   background:
-    url('../img/banner-ve2026.jpg') center top / cover no-repeat,
-    var(--clr-bg-deep);
-}
-
-/* Gradiente: oscurece tope (bajo el input) y base (para el texto) */
-.bot-brand-graphic::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: linear-gradient(
-    to bottom,
-    rgba(13, 17, 23, 0.65)  0%,
-    rgba(13, 17, 23, 0.08) 28%,
-    rgba(13, 17, 23, 0.08) 58%,
-    rgba(13, 17, 23, 0.72) 84%,
-    rgba(13, 17, 23, 0.94) 100%
-  );
+    url('../img/banner-afiliados.svg') center center / 100% auto no-repeat;
+  background-color: #faa81a;
 }
 
 /* Información del evento superpuesta sobre el gráfico */
@@ -807,13 +791,13 @@ a {
   text-shadow: 0 1px 8px rgba(0,0,0,0.75);
 }
 
-/* Franja de patrocinadores: parte inferior de la imagen portrait */
+/* Franja de patrocinadores: borde inferior del SVG */
 .bot-brand-sponsors {
   height: 72px;
   flex-shrink: 0;
   background:
-    url('../img/banner-ve2026.jpg') center bottom / 100% auto no-repeat;
-  background-color: #f8f7f3;
+    url('../img/banner-afiliados.svg') center bottom / 100% auto no-repeat;
+  background-color: #faa81a;
 }
 
 /* ── Pantallas pequeñas: ocultar etiquetas de botones nav ──────── */
