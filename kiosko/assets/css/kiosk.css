@@ -499,6 +499,24 @@ a {
   border-color: var(--clr-border-focus);
 }
 
+.ayuda-card--wide {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  align-items: center;
+  gap: 20px;
+  border-color: rgba(250, 168, 25, 0.28);
+  background: rgba(250, 168, 25, 0.07);
+}
+
+.ayuda-card--wide .ayuda-card-icon { font-size: 2.4rem; flex-shrink: 0; }
+.ayuda-card--wide .ayuda-card-body { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.ayuda-card--wide .ayuda-contact-email {
+  font-size: var(--fz-md);
+  font-weight: 700;
+  color: var(--clr-primary);
+  word-break: break-all;
+}
+
 .ayuda-card-icon {
   font-size: 2rem;
   line-height: 1;
