@@ -27,9 +27,10 @@
   --clr-border-focus: rgba(250, 168, 25, 0.45);
 
   /* Layout */
-  --nav-h:      60px;
-  --foot-h:     48px;
-  --bot-split:  58vh;   /* altura donde aparece el input (ergonómico en pantalla 1080×1920) */
+  --nav-h:       60px;
+  --foot-h:      48px;
+  --foot-bar-h:  76px;  /* altura total del input bar: padding(24) + textarea(50) + bordes(2) */
+  --bot-split:   58vh;  /* altura donde aparece el input (ergonómico en pantalla 1080×1920) */
 
   /* Botones */
   --btn-min-h:   52px;
@@ -741,13 +742,15 @@ a {
   overflow: hidden;
 }
 
-/* Zona gráfica: SVG siempre completo, sin cortes ni repetición */
+/* Zona gráfica: SVG centrado en el área visible (bajo el input bar) */
 .bot-brand-graphic {
   flex: 1;
   position: relative;
   overflow: hidden;
+  padding-top: var(--foot-bar-h);       /* compensa la zona tapada por el input */
   background:
     url('../img/banner-afiliados.svg') center center / contain no-repeat;
+  background-origin: content-box;       /* centra relativo al área visible, no a la tapada */
   background-color: #faa81a;
 }
 
