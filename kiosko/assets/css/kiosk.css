@@ -741,13 +741,13 @@ a {
   overflow: hidden;
 }
 
-/* Zona gráfica: banner del evento como fondo (área del logo CPV) */
+/* Zona gráfica: banner del evento como fondo — imagen portrait 1080×734 */
 .bot-brand-graphic {
   flex: 1;
   position: relative;
   overflow: hidden;
   background:
-    url('../img/banner-ve2026.jpg') 8% 0% / cover no-repeat,
+    url('../img/banner-ve2026.jpg') center top / cover no-repeat,
     var(--clr-bg-deep);
 }
 
@@ -807,12 +807,12 @@ a {
   text-shadow: 0 1px 8px rgba(0,0,0,0.75);
 }
 
-/* Franja de patrocinadores: muestra la franja blanca del banner a escala kiosko */
+/* Franja de patrocinadores: parte inferior de la imagen portrait */
 .bot-brand-sponsors {
   height: 72px;
   flex-shrink: 0;
   background:
-    url('../img/banner-ve2026.jpg') center bottom / 1080px auto no-repeat;
+    url('../img/banner-ve2026.jpg') center bottom / 100% auto no-repeat;
   background-color: #f8f7f3;
 }
 
