@@ -8,7 +8,10 @@
       "Bash(git -C \"c:/Users/EstebanVasquez/OneDrive - MSFT/Documents/GitHub/chatwidgetcira\" add kiosko/assets/css/kiosk.css)",
       "Bash(git -C \"c:/Users/EstebanVasquez/OneDrive - MSFT/Documents/GitHub/chatwidgetcira\" log --oneline development)",
       "Bash(git add *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Read(//c/Program Files/Google/Chrome/**)",
+      "Read(//c/Program Files \\(x86\\)/Google/Chrome/**)",
+      "Bash(powershell -Command \"Get-ItemProperty 'HKLM:\\\\\\\\SOFTWARE\\\\\\\\Microsoft\\\\\\\\Windows\\\\\\\\CurrentVersion\\\\\\\\App Paths\\\\\\\\chrome.exe' | Select-Object -ExpandProperty '\\(default\\)'\")"
     ]
   }
 }

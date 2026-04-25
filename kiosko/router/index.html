@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CIRA</title>
+  <style>html,body{margin:0;padding:0;background:#000;overflow:hidden;height:100%;width:100%}</style>
+  <script>
+    (function () {
+      var sw = screen.width;
+      var sh = screen.height;
+      var longSide  = Math.max(sw, sh);
+      var shortSide = Math.min(sw, sh);
+
+      /*
+       * Large vertical kiosk / TV:  longSide >= 1600 px  AND  shortSide >= 900 px
+       * Everything else (mobile, tablet, small table kiosk) → small
+       */
+      var dest = (longSide >= 1600 && shortSide >= 900)
+        ? 'https://camarapetrolera.app/public/kiosko-large/index.html'
+        : 'https://camarapetrolera.app/public/kiosko-small/index.html';
+
+      window.location.replace(dest);
+    }());
+  </script>
+</head>
+<body></body>
+</html>
