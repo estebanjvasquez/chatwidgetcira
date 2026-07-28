@@ -415,7 +415,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const body = $input.item.json.body || {};\nconst chatInput = body.chatInput || body.message || '';\nconst sessionId = body.sessionId || body.session_id || 'no-session-id';\nreturn { json: { chatInput, sessionId } };"
+        "jsCode": "const body = $input.item.json.body || {};\nconst chatInput = body.chatInput || body.message || '';\nconst sessionId = body.sessionId || body.session_id || 'no-session-id';\nconst meta = body.meta || {};\nreturn { json: { chatInput, sessionId, meta, t0: Date.now() } };"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -730,22 +730,6 @@
     },
     {
       "parameters": {
-        "mode": "raw",
-        "jsonOutput": "={\n  \"session_id\": {{ JSON.stringify($node['Webhook1'].json.body?.sessionId || 'sin-id') }},\n  \"pregunta_usuario\": {{ JSON.stringify($node['Webhook1'].json.body?.chatInput || 'vacio') }},\n  \"respuesta_ia\": {{ JSON.stringify($node['Interactive Intent Agent3'].json?.output || 'error') }},\n  \"tokens_usados\": {{ $node[\"Interactive Intent Agent3\"].json.response_metadata?.tokenUsage?.totalTokens || Math.ceil(($node[\"Interactive Intent Agent3\"].json?.output?.length || 0) / 4) }},\n  \"metadata\": {\n    \"modelo\": \"Gemini-3-Flash\",\n    \"longitud_caracteres\": {{ $node[\"Interactive Intent Agent3\"].json?.output?.length || 0 }},\n    \"ejecucion_id\": {{ JSON.stringify($execution.id) }},\n    \"origin\": {{ $('Webhook1').item.json.headers.origin }},\n    \"referer\": {{ $('Webhook1').item.json.headers.referer }},\n    \"x-forwarder-for\":{{ $('Webhook1').item.json.headers['x-forwarded-for'] }}\n  }\n}",
-        "includeOtherFields": true,
-        "options": {}
-      },
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        7264,
-        5184
-      ],
-      "id": "cb74db35-0312-48c7-b244-691af736232c",
-      "name": "Edit Fields1"
-    },
-    {
-      "parameters": {
         "workflowId": {
           "__rl": true,
           "value": "TwCZ9EawQGayFxlS",
@@ -786,6 +770,19 @@
       ],
       "id": "3408875a-85b9-485a-ae61-5b9702fde6da",
       "name": "Format Cards"
+    },
+    {
+      "parameters": {
+        "jsCode": "\nfunction safe(fn, def){ try { var v = fn(); return (v === undefined ? def : v); } catch(e){ return def; } }\n\nvar wh    = safe(function(){ return $('Webhook1').first().json; }, {});\nvar hdr   = wh.headers || {};\nvar body  = wh.body || {};\nvar pre   = safe(function(){ return $('Pre-Procesing3').first().json; }, {});\nvar parse = safe(function(){ return $('Parse Intent JSON3').first().json; }, {});\nvar agent = safe(function(){ return $('Interactive Intent Agent3').first().json; }, {});\n\n// filas reales devueltas por MySQL (alwaysOutputData -> 1 item vacio si 0)\nvar rows = safe(function(){\n  return $('MySQL Query3').all().map(function(i){ return i.json; })\n         .filter(function(j){ return j && Object.keys(j).length > 0; });\n}, []);\nvar nResultados = rows.length;\n\nvar isCommand   = safe(function(){ return $('Detect Command').first().json.isCommand; }, false);\nvar wrongPw     = safe(function(){ return !!$('Wrong Password').first().json; }, false);\nvar searchReady = String(parse.isSearchReady) === 'true';\n\n// --- inferir resultado_tipo por el camino ejecutado ---\nvar resultado_tipo;\nif (isCommand)          resultado_tipo = wrongPw ? 'comando_error' : 'comando';\nelse if (!searchReady)  resultado_tipo = 'conversation';\nelse if (nResultados === 0) resultado_tipo = 'sin_resultados';\nelse                    resultado_tipo = 'results';\n\nvar meta = body.meta || pre.meta || {};\nvar wp   = meta.wp || {};\n\nvar t0 = pre.t0 || null;\nvar tiempo_respuesta_ms = t0 ? (Date.now() - t0) : null;\n\nvar respuesta_ia = agent.output || parse.conversationalText || null;\n\nvar output = safe(function(){ return $json.output; }, null)\n          || safe(function(){ return $('Format Cards2').first().json.output; }, null)\n          || safe(function(){ return $('Code in JavaScript1').first().json.output; }, null)\n          || null;\n\nvar tokens = 0;\ntry { tokens = agent.response_metadata.tokenUsage.totalTokens; }\ncatch(e){ tokens = respuesta_ia ? Math.ceil(String(respuesta_ia).length / 4) : 0; }\n\nvar exec = null; try { exec = $execution.id; } catch(e){}\n\nreturn [{ json: {\n  session_id:       pre.sessionId || body.sessionId || 'sin-id',\n  pregunta_usuario: pre.chatInput || body.chatInput || '',\n  respuesta_ia:     respuesta_ia,\n  output:           output,\n  tokens_usados:    tokens,\n  error_log:        null,\n  metadata: {\n    modelo: 'Gemini-3-Flash',\n    // --- outcome ---\n    resultado_tipo: resultado_tipo,\n    query_intent: parse.queryIntent || null,\n    needs_clarification: (parse.needsClarification === true || parse.needsClarification === 'true'),\n    where_clause: parse.whereClause || null,\n    resultados_encontrados: isCommand ? null : nResultados,\n    tiempo_respuesta_ms: tiempo_respuesta_ms,\n    longitud_caracteres: respuesta_ia ? String(respuesta_ia).length : 0,\n    ejecucion_id: exec,\n    // --- headers crudos (Cloudflare deriva geo/UA) ---\n    ip: hdr['x-forwarded-for'] || null,\n    user_agent: hdr['user-agent'] || null,\n    accept_language: hdr['accept-language'] || null,\n    sec_ch_ua_platform: hdr['sec-ch-ua-platform'] || null,\n    sec_ch_ua_mobile: hdr['sec-ch-ua-mobile'] || null,\n    origin: hdr['origin'] || null,\n    referer: hdr['referer'] || null,\n    // --- meta del widget ---\n    page_url: meta.page_url || null,\n    page_title: meta.page_title || null,\n    referrer: meta.referrer || null,\n    utm_source: meta.utm_source || null,\n    utm_medium: meta.utm_medium || null,\n    utm_campaign: meta.utm_campaign || null,\n    visitor_id: meta.visitor_id || null,\n    msg_index: meta.msg_index || null,\n    widget_mode: meta.widget_mode || null,\n    screen: meta.screen || null,\n    viewport: meta.viewport || null,\n    timezone: meta.timezone || null,\n    connection: meta.connection || null,\n    dpr: meta.dpr || null,\n    ms_since_load: meta.ms_since_load || null,\n    client_ts: meta.client_ts || null,\n    ua_hints: meta.ua_hints || null,\n    wp_user_id: wp.user_id != null ? wp.user_id : null,\n    wp_user_role: wp.user_role || null,\n    wp_page_id: wp.page_id != null ? wp.page_id : null\n  }\n} }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7264,
+        5184
+      ],
+      "id": "b1a9c0de-1111-4a22-9f33-loggingnode01",
+      "name": "Build Log"
     }
   ],
   "connections": {
@@ -1119,7 +1116,13 @@
     },
     "Respond Conversation6": {
       "main": [
-        []
+        [
+          {
+            "node": "Build Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Format Cards2": {
@@ -1137,14 +1140,69 @@
       "main": [
         [
           {
-            "node": "Edit Fields1",
+            "node": "Build Log",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Edit Fields1": {
+    "Respond Conversation5": {
+      "main": [
+        [
+          {
+            "node": "Build Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond Wrong Password": {
+      "main": [
+        [
+          {
+            "node": "Build Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond Save OK": {
+      "main": [
+        [
+          {
+            "node": "Build Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond List": {
+      "main": [
+        [
+          {
+            "node": "Build Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond Delete OK": {
+      "main": [
+        [
+          {
+            "node": "Build Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Log": {
       "main": [
         [
           {

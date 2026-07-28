@@ -239,6 +239,56 @@ Original SIN tocar:
    sinónimos (opción B) o basta con la regla genérica + /aprender puntual.
 5. (Opcional) Implementar el logging enriquecido (resultado_tipo, parse_ok, es_error_real).
 
+────────────────────────────────────────────────────────────────────────────────
+10. LOGGING / OBSERVABILIDAD (implementado en - MEJORADO.json y chat-widget-v2.js)
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEMA: el flujo solo registraba la salida de resultados exitosos (Final Respond3 →
+Edit Fields1 → Call CIRA_log). Las salidas conversation, sin_resultados y los comandos
+admin NO se registraban → el dashboard quedaba ciego justo en ambigüedad y brechas de vocab.
+
+SUBWORKFLOW CIRA_log (recibido esta sesión):
+  - Trigger "When Executed by Another Workflow" (passthrough)
+  - Nodo "Guardar en Supabase" con dataToSend=autoMapInputData → tabla audit_log_entries
+  - Esquema tabla: id, fecha_creacion, session_id, pregunta_usuario, respuesta_ia,
+    tokens_usados, metadata (JSONB), error_log, output
+  - autoMap + metadata jsonb ⇒ NO necesita cambios; campos nuevos van dentro de metadata.
+
+IMPLEMENTADO (1 + 2 + 3-lite + 4), SIN migración de BD ni cambios al subworkflow:
+  chat-widget-v2.js:
+    - collectMeta() (page_url, título, referrer, visitor_id persistente cira_vid, device,
+      viewport, timezone, connection, UTM, UA client hints, window.CiraContext de WP)
+    - fetch body ahora: { chatInput, sessionId, meta }  (retrocompatible)
+  - MEJORADO.json:
+    - Pre-Procesing3: passthrough de meta + t0 (latencia)
+    - Nodo "Build Log" (reemplaza Edit Fields1): infiere resultado_tipo, arma metadata jsonb,
+      lee defensivamente con safe() (no rompe en rutas admin sin agente)
+    - 7 salidas → Build Log → Call 'CIRA_log':
+        Final Respond3=results, Respond Conversation5=conversation,
+        Respond Conversation6=sin_resultados, Respond Wrong Password=comando_error,
+        Respond Save/List/Delete OK=comando
+
+resultado_tipo se infiere: isCommand? (wrongPw? comando_error : comando) :
+  !searchReady? conversation : nResultados===0? sin_resultados : results
+
+metadata guarda: resultado_tipo, needs_clarification, where_clause, query_intent,
+  resultados_encontrados, tiempo_respuesta_ms, longitud_caracteres, ejecucion_id,
+  ip, user_agent, accept_language, sec-ch-ua*, origin, referer,
+  page_url, page_title, referrer, utm_*, visitor_id, msg_index, widget_mode, screen,
+  viewport, timezone, connection, dpr, ms_since_load, client_ts, ua_hints,
+  wp_user_id, wp_user_role, wp_page_id
+
+REPARTO: n8n almacena crudo (ip, user_agent, meta) — la app de Cloudflare deriva geo/UA.
+
+OPCIONAL (no aplicado): ALTER TABLE audit_log_entries ADD COLUMN resultado_tipo text;
+  (solo si se quiere filtrar por SQL sin abrir el jsonb)
+
+WordPress: para el usuario logueado, inyectar por PHP window.CiraContext = {page_id,
+  user_id, user_role} donde se incrusta el widget.
+
+Validación: node --check OK en widget y en el jsCode de Build Log. 37 nodos, 0 refs
+residuales a Edit Fields1, Call 'CIRA_log' preservado.
+
 ================================================================================
-FIN DEL CONTEXTO — Sesión 2026-07-28 (diagnóstico y mejoras del bot CIRA)
+FIN DEL CONTEXTO — Sesión 2026-07-28 (diagnóstico, mejoras y logging del bot CIRA)
 ================================================================================

@@ -207,6 +207,54 @@ function initWidget(){
     localStorage.setItem("cira_sid", sid);
   }
 
+  /* ------------------------------------------------ */
+  /* RECOLECCIÓN DE CONTEXTO (para el log)            */
+  /* ------------------------------------------------ */
+  var vid = localStorage.getItem("cira_vid");
+  if(!vid){
+    vid = (crypto.randomUUID ? crypto.randomUUID() : "v" + Date.now());
+    localStorage.setItem("cira_vid", vid);
+  }
+  var pageLoadTs = Date.now();
+  var msgIndex   = 0;
+  var uaHints    = null;
+  if(navigator.userAgentData && navigator.userAgentData.getHighEntropyValues){
+    navigator.userAgentData
+      .getHighEntropyValues(["platform","platformVersion","model","uaFullVersion"])
+      .then(function(h){ uaHints = h; })
+      .catch(function(){});
+  }
+
+  function collectMeta(){
+    var m = {
+      page_url:     location.href,
+      page_title:   document.title,
+      referrer:     document.referrer || null,
+      lang:         navigator.language || null,
+      langs:        (navigator.languages || []).join(","),
+      timezone:     (function(){ try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch(e){ return null; } })(),
+      screen:       (screen.width + "x" + screen.height),
+      viewport:     (window.innerWidth + "x" + window.innerHeight),
+      dpr:          window.devicePixelRatio || 1,
+      widget_mode:  mode,
+      visitor_id:   vid,
+      msg_index:    ++msgIndex,
+      ms_since_load: Date.now() - pageLoadTs,
+      client_ts:    new Date().toISOString(),
+      connection:   (navigator.connection && navigator.connection.effectiveType) || null,
+      ua_hints:     uaHints
+    };
+    try {
+      var qp = new URLSearchParams(location.search);
+      ["utm_source","utm_medium","utm_campaign","utm_term","utm_content"].forEach(function(k){
+        if(qp.get(k)) m[k] = qp.get(k);
+      });
+    } catch(e){}
+    /* Contexto inyectado por WordPress (opcional, vía PHP): window.CiraContext */
+    if(window.CiraContext) m.wp = window.CiraContext;
+    return m;
+  }
+
   function updateNote(){ note.innerHTML = t("note"); }
   updateNote();
 
@@ -295,7 +343,7 @@ function initWidget(){
       var r = await fetch(webhook, {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ chatInput: text, sessionId: sid })
+        body:    JSON.stringify({ chatInput: text, sessionId: sid, meta: collectMeta() })
       });
 
       clearTimeout(slowTimer);

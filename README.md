@@ -516,6 +516,45 @@ subsistema de sinónimos. El dashboard debe recolectar la categoría "consultas 
 para decidir con datos reales si a futuro conviene una tabla `synonyms` dedicada (con comandos
 `/sinonimo`, `/listar-sinonimos`, `/borrar-sinonimo`, `/validar-sinonimo`) o basta con `/aprender`.
 
+### Logging y observabilidad (en `- MEJORADO.json`)
+
+El flujo original solo registraba la salida de **resultados exitosos**. La versión mejorada
+registra **todas** las salidas terminales, para alimentar el dashboard con datos reales.
+
+**Cambios (sin migración de BD ni cambios en el subworkflow `CIRA_log`):**
+
+- **Pre-Procesing3**: recibe `meta` del widget y captura `t0` (para latencia).
+- **Build Log** (reemplaza a `Edit Fields1`): nodo único que infiere `resultado_tipo`,
+  arma el `metadata` (jsonb) enriquecido y lee todo defensivamente (funciona también en
+  rutas admin donde el agente no se ejecutó).
+- **7 salidas → Build Log → Call 'CIRA_log'**: `Final Respond3` (results),
+  `Respond Conversation5` (conversation), `Respond Conversation6` (sin_resultados),
+  `Respond Wrong Password` (comando_error) y `Respond Save/List/Delete OK` (comando).
+
+Como el subworkflow `CIRA_log` usa `autoMapInputData` y la tabla `audit_log_entries` tiene
+una columna `metadata` de tipo **jsonb**, todos los campos nuevos viajan dentro de `metadata`
+sin agregar columnas. La geolocalización y el parseo de user-agent los hace la app de análisis
+en **Cloudflare** a partir de `metadata->>'ip'` y `metadata->>'user_agent'`.
+
+**Datos capturados en `metadata`:** resultado_tipo, needs_clarification, where_clause,
+query_intent, resultados_encontrados, tiempo_respuesta_ms · ip, user_agent, accept_language,
+sec-ch-ua* · (widget) page_url, page_title, referrer, utm_*, visitor_id, msg_index, widget_mode,
+screen, viewport, timezone, connection, wp_user_id, wp_user_role.
+
+**Widget** (`chat-widget-v2.js`): función `collectMeta()` que se envía en el body del POST
+(`{ chatInput, sessionId, meta }`). Retrocompatible con el flujo de producción actual.
+
+Para capturar el usuario de WordPress logueado, inyectar por PHP donde se incrusta el widget:
+```php
+<script>
+window.CiraContext = {
+  page_id:   <?php echo get_the_ID(); ?>,
+  user_id:   <?php echo get_current_user_id(); ?>,
+  user_role: "<?php echo esc_js(implode(',', wp_get_current_user()->roles)); ?>"
+};
+</script>
+```
+
 ---
 
 ## Credenciales requeridas en n8n
