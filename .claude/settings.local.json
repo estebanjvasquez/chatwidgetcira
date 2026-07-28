@@ -18,7 +18,9 @@
       "Bash(powershell -Command \"Get-ChildItem -Path 'C:\\\\Users\\\\EstebanVasquez' -Recurse -Filter '*Banner*Kiosk*' -ErrorAction SilentlyContinue | Select-Object FullName; Get-ChildItem -Path 'C:\\\\Users\\\\EstebanVasquez' -Recurse -Filter '*Perfil*' -ErrorAction SilentlyContinue | Select-Object FullName\")",
       "Bash(powershell -Command \"Get-ChildItem -Path 'C:\\\\Users\\\\EstebanVasquez\\\\Downloads\\\\chatwidgetcira-development \\(2\\)\\\\chatwidgetcira-development\\\\kiosko\\\\assets\\\\img\\\\' | Select-Object Name, Length\")",
       "Bash(powershell -Command \"Copy-Item -Path 'C:\\\\Users\\\\EstebanVasquez\\\\Downloads\\\\chatwidgetcira-development \\(2\\)\\\\chatwidgetcira-development\\\\kiosko\\\\assets\\\\img\\\\Perfil de Afiliados - Banner Kiosk.svg' -Destination 'C:\\\\Users\\\\EstebanVasquez\\\\OneDrive - MSFT\\\\Documents\\\\GitHub\\\\chatwidgetcira\\\\kiosko\\\\assets\\\\img\\\\Perfil de Afiliados - Banner Kiosk.svg' -Force; Write-Host 'Copiado OK'\")",
-      "Bash(powershell -Command \"Rename-Item -Path 'C:\\\\Users\\\\EstebanVasquez\\\\OneDrive - MSFT\\\\Documents\\\\GitHub\\\\chatwidgetcira\\\\kiosko\\\\assets\\\\img\\\\Perfil de Afiliados - Banner Kiosk.svg' -NewName 'banner-afiliados.svg' -Force; Write-Host 'OK'\")"
+      "Bash(powershell -Command \"Rename-Item -Path 'C:\\\\Users\\\\EstebanVasquez\\\\OneDrive - MSFT\\\\Documents\\\\GitHub\\\\chatwidgetcira\\\\kiosko\\\\assets\\\\img\\\\Perfil de Afiliados - Banner Kiosk.svg' -NewName 'banner-afiliados.svg' -Force; Write-Host 'OK'\")",
+      "Bash(python -c ' *)",
+      "Bash(python build_mejorado.py)"
     ]
   }
 }
