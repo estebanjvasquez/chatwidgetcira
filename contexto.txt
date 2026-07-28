@@ -1,409 +1,244 @@
 ================================================================================
-CONTEXTO DE SESIÓN — CIRA KIOSKO
+CONTEXTO DE SESIÓN — CIRA BOT (n8n): DIAGNÓSTICO Y MEJORAS
 Proyecto: chatwidgetcira
 Branch: development
-Fecha: Abril 2026
+Fecha: 2026-07-28
 ================================================================================
 
-────────────────────────────────────────────────────────────────────────────────
-1. DESCRIPCIÓN DEL PROYECTO EXISTENTE (antes de esta sesión)
-────────────────────────────────────────────────────────────────────────────────
-
-Widget de chat para el asistente virtual CIRA de la Cámara Petrolera de Venezuela.
-Se integra con un workflow de n8n mediante webhook.
-
-Archivos principales en la raíz:
-  - chat-widget-v2.js     → Widget original (CDN, bubble + inline)
-  - Campet-Logo.png       → Logo corporativo
-  - cirabot.png           → Avatar del bot (710 KB)
-  - CIRA Bot CAMPET V2.json → Workflow de n8n
-  - wp-script-examples.html → Ejemplos de integración WordPress/Divi
-
-Webhook n8n (producción):
-  URL:    https://vmi2945958.contaboserver.net/webhook/cira-botV2
-  Método: POST
-  Body:   { "chatInput": "texto", "sessionId": "uuid" }
-  Resp:   { "output": "<HTML>", "type": "results|conversation" }
-
-Color primario de marca: #faa819 (dorado CPV)
-
-Configuración del widget:
-  window.ChatWidgetConfig = {
-    webhookUrl:    'https://vmi2945958.contaboserver.net/webhook/cira-botV2',
-    avatar:        'URL o ruta a cirabot.png',
-    mode:          'bubble' | 'inline',
-    mountSelector: '#cira-chat',          // solo para inline
-    style:         { primaryColor: '#faa819' }
-  };
+Esta sesión NO fue sobre el kiosko. Fue un análisis del BOT de n8n (CIRA) a partir
+de dos exportes del dashboard de diagnóstico, con el objetivo de mejorar las respuestas
+sin romper el flujo. Abajo queda el volcado completo de lo trabajado.
 
 
 ────────────────────────────────────────────────────────────────────────────────
-2. LO QUE SE CONSTRUYÓ EN ESTA SESIÓN — KIOSKO TÁCTIL
+1. ENCARGO DEL USUARIO
 ────────────────────────────────────────────────────────────────────────────────
 
-Se creó una experiencia kiosko completa en ./kiosko/ para stand/evento.
-Sin dependencias de CDN. Funciona completamente desde archivos locales.
-El único requisito de red es el webhook de n8n para el chat.
-
-ESTRUCTURA DE ARCHIVOS:
-  kiosko/
-  ├── index.html                  → Landing: avatar animado + descripción + CTAs
-  ├── bot.html                    → Chat embebido full-height + overlay inactividad
-  ├── ayuda.html                  → Guía de uso en tarjetas táctiles
-  ├── README.md                   → Documentación técnica completa (14 secciones)
-  └── assets/
-      ├── css/
-      │   └── kiosk.css           → Sistema de diseño completo (~800 líneas)
-      ├── js/
-      │   ├── kiosk.js            → Transiciones de página + anti-zoom táctil
-      │   ├── idle-manager.js     → Temporizador de inactividad configurable
-      │   └── chat-widget-kiosk.js→ Widget local sin CDN (solo inline, sesión fresca)
-      └── img/
-          ├── cirabot.png         → Copiado desde raíz
-          └── campet-logo.png     → Copiado desde raíz
+- Se entregó el JSON del bot n8n y un listado de análisis de resultados para
+  "respuestas ambiguas" y "JSON inválido".
+- Pedido: analizar el flujo y el prompt para determinar qué genera esos fallos y
+  proponer mejoras (flujo + prompt) SIN romper nada.
+- Luego: instrucciones para el IDE del dashboard para filtrar falsos positivos.
+- Luego: análisis de si conviene un subsistema de sinónimos.
+- Decisión final del usuario: usar por ahora la regla genérica del prompt, y afinar
+  el dashboard para recolectar data real de brechas de vocabulario.
 
 
 ────────────────────────────────────────────────────────────────────────────────
-3. FLUJO DE NAVEGACIÓN
+2. ARCHIVOS DE ENTRADA
 ────────────────────────────────────────────────────────────────────────────────
 
-index.html (Landing)
-  ├─ [Iniciar conversación] ──► bot.html
-  ├─ [¿Cómo funciona?] ───────► ayuda.html
-  └─ Inactividad 120s → recarga index.html
+Flujo del bot:
+  - CIRA Bot CAMPET Actual.json   (prod actual, formato whereClause)
+  - CIRA Bot CAMPET V2.json       (idéntico prompt al Actual)
+Exportes del dashboard (en C:\Users\EstebanVasquez\Downloads\):
+  - diagnostico-respuestas-ambiguas.csv  (340 filas, abr–may 2026)
+  - diagnostico-json-invalido.csv        (377 filas, mar–may 2026)
+Catálogos reales (Downloads):
+  - sectors.csv   → 8 sectores reales
+  - services.csv  → ~100 servicios (incluye basura "X" y muchos "OTROS")
 
-bot.html (Chat)
-  ├─ [Nueva]   → resetea chat, misma página (llama CiraKiosk.reset())
-  ├─ [Ayuda]   → ayuda.html
-  ├─ [Inicio]  → index.html
-  ├─ Inactividad 75s → overlay de aviso con cuenta regresiva 15s
-  └─ Inactividad 90s → CiraKiosk.reset() + redirige a index.html
-
-ayuda.html (Guía)
-  ├─ [Usar CIRA] → bot.html
-  ├─ [Inicio]    → index.html
-  └─ Inactividad 120s → redirige a index.html
+Columnas de los CSV de log:
+  log_id, fecha_creacion, session_id, reason, pregunta_usuario, respuesta_ia_preview,
+  output_preview, query_intent, where_clause, human_summary, resultados_encontrados,
+  needs_clarification_ai, consulta_ambigua_output
 
 
 ────────────────────────────────────────────────────────────────────────────────
-4. DECISIONES TÉCNICAS CLAVE
+3. ARQUITECTURA DEL BOT (resumen del flujo Actual)
 ────────────────────────────────────────────────────────────────────────────────
 
-TEMA OSCURO:
-  Fondo principal: #0f172a (azul noche)
-  Fondo nav/cards: #1e293b
-  Primario (dorado): #faa819
-  Texto: #f1f5f9
+Webhook (POST /cira-botV2) → Pre-Procesing3 (extrae chatInput, sessionId)
+→ Admin Password → Detect Command (/aprender, /listar-aprendizajes, /borrar-aprendizaje)
+→ Is Command?
+   TRUE  → Validate Password → Route Command → INSERT/SELECT/UPDATE agent_learnings
+   FALSE → Load Learnings (SELECT categoria,instruccion FROM agent_learnings WHERE activo=1)
+        → Build System Prompt (prompt base + aprendizajes)
+        → Interactive Intent Agent3 (Gemini, temp 0.1; tools Catalog Sectores2 / Servicios2;
+          memoria Postgres sessionId_intent)
+        → Parse Intent JSON3 (limpia markdown, JSON.parse, regex de rescate)
+        → Is Search Ready?3
+             TRUE  → MySQL Query3 (SELECT ... FROM ChatView WHERE {whereClause} LIMIT 100)
+                   → If2 (¿vacío?) → Code in JavaScript1 (no encontramos) / Format Cards2 (tarjetas)
+                   → Final Respond3 → Edit Fields1 → Call 'CIRA_log' (logging)
+             FALSE → Respond Conversation5 (texto conversacional)
 
-CSS VARIABLES (sección :root en kiosk.css):
-  --clr-primary       #faa819    → color dorado de marca
-  --clr-primary-dark  #d4890c    → estado :active
-  --clr-primary-glow  rgba(250,168,25,0.32)
-  --clr-bg-main       #0f172a
-  --clr-bg-nav        #1e293b
-  --clr-bg-card       rgba(30,41,59,0.88)
-  --nav-h             80px       → altura navbar
-  --btn-min-h         64px       → altura mínima botones
-  --btn-cta-h         80px       → botón CTA principal
+Salida: { output: HTML, type: 'results' | 'conversation' }
 
-SESIÓN DEL CHAT:
-  Sesión fresca por cada visita (NO persiste en localStorage).
-  Razón: kiosko público, múltiples usuarios.
-  Generada con crypto.randomUUID() o fallback con Date.now().
-  API global: window.CiraKiosk.reset() limpia chat y genera nueva sesión.
-
-IDLE MANAGER (idle-manager.js):
-  Inicialización por página (en cada HTML, al final del body):
-    document.addEventListener('DOMContentLoaded', function() {
-      IdleManager.init({
-        timeout:     90000,   // ms hasta onIdle
-        warningAt:   15000,   // ms antes del timeout para mostrar overlay
-        warningEl:   document.getElementById('idle-overlay'),
-        countdownEl: document.getElementById('idle-countdown'),
-        onIdle: function() { ... }
-      });
-    });
-  API: IdleManager.extend() cancela el timer (botón "Continuar").
-
-ANTI-ZOOM TÁCTIL (kiosk.js):
-  Bloquea pinch-zoom y doble-tap zoom.
-  Transición de salida: añade clase 'page-exit' al body (CSS pageOut animation).
-
-CSS DEL WIDGET:
-  Los estilos del widget (.ck-shell, .ck-body, etc.) están en kiosk.css,
-  NO inyectados por JS. Esto elimina el FOUC al navegar a bot.html.
-  El widget usa clases .ck-* para todos sus elementos.
+El prompt pide al modelo devolver JSON en una línea:
+  {"whereClause","queryIntent","hasFilter","needsClarification","isSearchReady","humanSummary"}
+Reglas SQL: Sector/Servicios SIEMPRE con LIKE (multi-valor), name con LIKE, rif exacto.
 
 
 ────────────────────────────────────────────────────────────────────────────────
-5. OPTIMIZACIONES DE RENDIMIENTO (commit def60e1)
+4. DIAGNÓSTICO — CAUSAS RAÍZ DE LOS FALLOS
 ────────────────────────────────────────────────────────────────────────────────
 
-PROBLEMA ORIGINAL: ~2 segundos de carga en servidor, más en móvil/tablet.
+HALLAZGO TRANSVERSAL: el dashboard SOBREESTIMA errores. Marca como "inválido" toda salida
+que no sea JSON parseable, pero muchas son respuestas conversacionales CORRECTAS.
 
-CAUSAS Y SOLUCIONES APLICADAS:
+Segmentación por fecha (dos "eras"):
+  [INTENT:...] tags      267 filas  mar–abr  → PROMPT LEGADO (ya no existe). Ignorar.
+  Texto/lenguaje natural  94 filas  mar–abr  → mayormente legado; patrón reproducible
+  Respuesta vacía         13 filas  25-mar   → legado
+  "Te refieres" ambiguas 340 filas  abr–may  → ARQUITECTURA ACTUAL (problema real)
+  Bad escaped character    3 filas  abr–may  → ACTUAL (apóstrofes rompen JSON)
 
-1. Scripts bloqueaban el parser HTML
-   FIX: defer en todos los scripts externos de las 3 páginas
-   <script src="assets/js/idle-manager.js" defer></script>
-   <script src="assets/js/kiosk.js" defer></script>
-   (chat-widget-kiosk.js también defer en bot.html)
+PROBLEMA 1 (dominante): bucle "¿Te refieres a alguna de estas?"
+  - 340 casos, TODOS query_intent=COMPANY, TODOS resultados_encontrados=1.
+  - Casi todos vienen del clic en tarjeta: sendPrompt('dame información sobre la empresa X').
+  - Causa: nodo Format Cards2, rama isFullCard (COMPANY/RIF) tiene el header hardcodeado
+    "¿Te refieres a alguna de estas?" incluso con 1 solo resultado exacto.
 
-2. Página en blanco mientras JS cargaba
-   CAUSA: kiosk.js seteaba document.documentElement.style.opacity='0' al cargar,
-          esperaba DOMContentLoaded para volverlo a 1. Si JS tardaba → página en blanco.
-   FIX: Animación CSS pura en body:
-     body { animation: pageIn 300ms ease both; }
-     @keyframes pageIn { from { opacity: 0; } to { opacity: 1; } }
-   Salida: body.page-exit { animation: pageOut 260ms ease forwards; }
+PROBLEMA 2: apóstrofes rompen el JSON (KALA'S, C.A.)
+  - El modelo genera LOWER('%KALA\'S%'); \' es escape inválido en JSON → JSON.parse falla.
 
-3. Imágenes descubiertas tarde
-   FIX: <link rel="preload" href="assets/img/cirabot.png" as="image" fetchpriority="high">
-        <link rel="preload" href="assets/img/campet-logo.png" as="image">
-   En las 3 páginas HTML.
+PROBLEMA 3: saluda o dice "no encontramos" cuando el término SÍ es válido
+  - CONSTRUCCION, SERVICIOS A POZOS, POZOS, FABRICANTES, MOVIMIENTO DE TIERRA (existe en
+    catálogo, servicio id 85) → el modelo respondió con el saludo genérico en vez de buscar.
 
-4. Primera petición al webhook lenta (TCP/TLS cold)
-   FIX (solo bot.html):
-   <link rel="preconnect" href="https://vmi2945958.contaboserver.net">
+PROBLEMA 4: menú "A) empresa … B) sector …" (≈19-25 casos)
+  - Ante términos ambiguos el modelo devuelve un menú de texto → rompe JSON y molesta.
 
-5. Navegación lenta entre páginas
-   FIX: <link rel="prefetch" href="bot.html"> en index.html y ayuda.html
-        <link rel="prefetch" href="assets/js/chat-widget-kiosk.js"> también prefetched
+PROBLEMA 5 (legado): drift de formato ([INTENT:X], texto plano). Ya no aplica al bot actual.
 
-6. backdrop-filter costoso en GPU de móvil/tablet
-   FIX: media query que lo desactiva en dispositivos táctiles:
-     @media (hover: none), (max-width: 768px) {
-       .description-bubble, .ayuda-card, .idle-card {
-         -webkit-backdrop-filter: none;
-         backdrop-filter: none;
-         background: rgba(24, 36, 55, 0.98);
-       }
-     }
-
-7. CSS del widget inyectado en runtime por JS
-   FIX: Los estilos se movieron a kiosk.css. Se eliminó la función injectCSS()
-        del widget. Elimina el flash de contenido sin estilo.
-
-8. IdleManager.init() en inline script antes que los scripts defer
-   FIX: Envuelto en DOMContentLoaded (que dispara DESPUÉS de todos los defer):
-     document.addEventListener('DOMContentLoaded', function() {
-       IdleManager.init({...});
-     });
-   NOTA: resetConversation() sí se define como función global (no en DOMContentLoaded)
-         porque es llamada desde onclick="" en el HTML.
+Aprendizajes de los catálogos:
+  - Solo 8 sectores (estables desde 2022) → conviene incrustarlos en el prompt.
+  - abogados vs legal: "legal" encontró 6, "abogados" dio 0 porque el bot buscaba solo en
+    Sector/Servicios y NO en name (varias empresas llevan "ABOGADOS" en el nombre).
+    → Regla general: en búsquedas por concepto, buscar también en name por raíz.
+  - gruas/izaje/elevación NO tienen match en el catálogo → "no encontramos" es correcto.
+  - "X" y "OTROS" son basura a excluir como criterio.
 
 
 ────────────────────────────────────────────────────────────────────────────────
-6. ANIMACIÓN DEL AVATAR — EFECTO LATIDO
+5. ENTREGABLE 1 — CIRA Bot CAMPET Actual - MEJORADO.json
 ────────────────────────────────────────────────────────────────────────────────
 
-UBICACIÓN EN HTML (index.html):
-  <div class="avatar-wrapper">
-    <div class="avatar-glow"   aria-hidden="true"></div>
-    <div class="avatar-ring"   aria-hidden="true"></div>
-    <div class="avatar-ring avatar-ring-2" aria-hidden="true"></div>
-    <div class="avatar-ring avatar-ring-3" aria-hidden="true"></div>
-    <img src="assets/img/cirabot.png" class="avatar-img" ...>
-  </div>
+Copia del flujo (original intacto). VERIFICADO: 37 nodos, conexiones 100% idénticas.
+Generada con script Python (build_mejorado.py en el scratchpad de la sesión).
+Solo cambian 4 nodos de código:
 
-DIMENSIONES RELEVANTES:
-  .avatar-wrapper:  224px × 224px
-  .avatar-img:      200px × 200px + 4px border = 208px visual
-  .avatar-glow:     inset: -16px → 256px (radial gradient, z-index: 0)
-  .avatar-ring:     inset: 8px  → 208px = BORDE EXACTO DEL AVATAR (z-index: 1)
-  .avatar-img:      z-index: 2 (encima de todo)
+  Build System Prompt → prompt reconstruido:
+    - 8 sectores incrustados (lista cerrada, sin llamar tool)
+    - Mapa de sinónimos/enrutamiento (pozos, construcción, transporte, tecnológicos,
+      ingeniería, fabricantes/suplidores, operadores, LEGAL/abogados)
+    - Regla "BÚSQUEDA POR CONCEPTO": buscar también en name por raíz (singular),
+      con paréntesis al combinar OR con AND de ciudad/estado
+    - CASO B: "dame información sobre la empresa X" = detalle, nunca desambiguar
+    - Anti-saludo (términos de negocio no disparan el saludo)
+    - Regla anti-menú A/B (desempate determinista)
+    - Regla de apóstrofes: buscar una palabra distintiva sin apóstrofes/comillas/sufijos
+    - Ejemplos nuevos: movimiento de tierra, servicios a pozos, abogados, KALA'S
 
-LÓGICA DEL KEYFRAME (ripplePulse):
-  0%  → scale(1.00), opacity: 0    — anillo OCULTO bajo la imagen del avatar
-  20% → scale(1.20), opacity: 0.65 — anillo emerge ~15px afuera del avatar (PICO)
-  100%→ scale(1.90), opacity: 0    — anillo se expande a 395px y se disuelve
+  Format Cards2 y Format Cards → header condicional:
+    if (count === 1) "Información de X:"  else  "¿Te refieres a alguna de estas?"
 
-  La clave: los anillos parten BAJO la imagen (opacity:0), emergen visibles al 20%,
-  y se disuelven al 100%. Entre latidos hay silencio visual real.
+  Parse Intent JSON3 → blindaje antes de parsear:
+    cleaned = cleaned.replace(/^\s*\[[A-Z_]+(?::[A-Z_]+)?\]\s*/, '');  // quita [INTENT:X]
+    cleaned = cleaned.replace(/\\'/g, "''");                            // \' inválido → ''
 
-TRES ANILLOS ESCALONADOS:
-  .avatar-ring   → animation-delay: 0s
-  .avatar-ring-2 → animation-delay: 0.83s  (= duración / 3 = 2.5 / 3)
-  .avatar-ring-3 → animation-delay: 1.66s  (= duración / 3 × 2)
+NOTA: el guard de input vacío se resolvió por prompt (regla), no con nodo nuevo, para no
+alterar la topología. Existe la variante con nodo IF si se pide.
 
-OTRAS ANIMACIONES DEL AVATAR:
-  avatarPopIn: aparece con resorte al cargar (0.9s, cubic-bezier spring)
-  avatarFloat: flota suave arriba/abajo (4s, translateY -11px)
-  glowPulse:   resplandor ambiental detrás (3s, scale 1→1.08)
-
-DÓNDE AJUSTAR:
-  Color:     background-color en .avatar-ring → rgba(250, 168, 25, 0.65)
-  Inset:     inset en .avatar-ring → 8px (positivo = más pequeño, negativo = más grande)
-  Velocidad: duración en animation de .avatar-ring → 2.5s
-             ⚠ Al cambiar duración, actualizar delays: delay = duración / 3
-  Expansión: scale(1.90) en @keyframes ripplePulse al 100%
-  Intensidad:opacity: 0.65 en @keyframes ripplePulse al 20%
-
-FIXES APLICADOS DURANTE LA SESIÓN:
-  Intento 1 (inset:0):     anillos 224px, halo visible solo 2px → imperceptible
-  Intento 2 (inset:-24px): anillos 272px, siempre visibles → línea naranja estática
-  Intento 3 (inset:8px) +  anillos 208px, parten ocultos, emergen al 20% → CORRECTO
-    keyframe con opacity:0→0.65→0
+PRUEBAS SUGERIDAS al reimportar (reasignar credenciales Postgres/MySQL/Gemini):
+  - clic en empresa → "Información de X:" (no "¿Te refieres?")
+  - KALA'S, C.A. → JSON válido con LOWER(name) LIKE '%kala%'
+  - MOVIMIENTO DE TIERRA / CONSTRUCCION / POZOS → búsqueda (no saludo)
+  - abogados → las 6 empresas legales
+  - gruas → "no encontramos" (correcto)
+  - N&V CONSULTORES, C.A. → COMPANY directo, sin menú A/B
 
 
 ────────────────────────────────────────────────────────────────────────────────
-7. CÓMO EJECUTAR EL KIOSKO
+6. ENTREGABLE 2 — docs/diagnostico-filtros-falsos-positivos.md
 ────────────────────────────────────────────────────────────────────────────────
 
-SERVIDOR HTTP LOCAL (recomendado para evitar CORS con fetch):
-  cd kiosko
-  python -m http.server 8080
-  → http://localhost:8080/index.html
+Brief para el IDE/IA donde se desarrolló el dashboard de análisis.
 
-ABRIR DIRECTO:
-  Doble clic en kiosko/index.html
-  (funciona para navegar, pero fetch al webhook puede fallar en algunos navegadores)
+REGLAS DE EXCLUSIÓN (falsos positivos):
+  FP-1  formato legado [INTENT:...]      respuesta_ia ~* '^\s*\[(intent|needs_clar)'
+  FP-2  input vacío                      TRIM(pregunta_usuario) = ''
+  FP-3  conversacional legítima          saludo / fuera de ámbito / "debe limitar su búsqueda"
+        (OJO: "no encontramos" YA NO va aquí; ver categoría accionable)
+  FP-4  detalle de 1 empresa             (query_intent='COMPANY' AND resultados=1)
+                                          OR pregunta ILIKE 'dame informaci%n sobre la empresa%'
 
-CHROME MODO KIOSKO (producción en evento):
-  chrome.exe --kiosk --no-first-run --disable-infobars \
-    "http://localhost:8080/index.html"
+MÉTRICA DE AMBIGÜEDAD — CORRECCIÓN IMPORTANTE:
+  La señal 'output contiene "Te refieres"' es INCORRECTA (da 0 real, era detalle de 1 empresa).
+  Ambigüedad real = needs_clarification_ai=TRUE OR patrón "puede referirse/interpretarse" /
+  "A)...B)" / "[NEEDS_CLARIFICATION". En el histórico ≈25 casos (menú A/B, comportamiento viejo).
 
-HARD REFRESH para limpiar caché CSS/JS:
-  Ctrl + Shift + R  (Windows/Linux)
-  Cmd + Shift + R   (Mac)
+CATEGORÍA NUEVA Y ACCIONABLE — "Consultas sin resultado" (brecha de vocabulario / sinónimo):
+  NO descartar "%no encontr%". Agruparla por término, cruzarla contra sectors/services y
+  ordenar por frecuencia. Clasificación automática:
+    🔴 BUG        coincide con catálogo pero dio 0  → ej: operadores (4×), instalaciones marinas,
+                  riesgos, gasoductos, registros y perfiles  (revisar where o dato en ChatView)
+    🟡 SINÓNIMO   no coincide, término de negocio    → ej: gruas, alquiler de gruas, levantamiento, fianzas
+    ⚪ RUIDO      typo/gibberish/nombre propio        → ej: grafox, b, whtherfor, trnsporte
+  (44 filas de "no encontramos" en el histórico. Query SQL con EXISTS contra sectors/services
+   y ranking por 'veces' incluida en el doc.)
 
-
-────────────────────────────────────────────────────────────────────────────────
-8. HISTORIAL DE COMMITS DE ESTA SESIÓN
-────────────────────────────────────────────────────────────────────────────────
-
-48a2bdc  fix: corregir efecto de latido (inset:8px + keyframe opacity:0→0.65→0)
-6c3b9cd  feat: reemplazar ondas de contorno por pulso de círculo relleno
-def60e1  perf: eliminar causas de carga lenta en servidor y móvil
-22d345c  Add kiosko/ — experiencia táctil completa para stand de evento
-
-Todos en branch: development
-
-
-────────────────────────────────────────────────────────────────────────────────
-9. ARCHIVOS JS — RESPONSABILIDADES Y API
-────────────────────────────────────────────────────────────────────────────────
-
-kiosk.js
-  - Transición fade-out al navegar (body.page-exit → @keyframes pageOut → 260ms → href)
-  - Intercepta links internos con event delegation
-  - Bloquea pinch-zoom y doble-tap (events: touchstart, touchend)
-  - API: window.KioskNav.goTo(url) | .home() | .bot() | .help()
-
-idle-manager.js
-  - Detecta: touchstart, touchmove, touchend, pointerdown, pointermove,
-             mousedown, mousemove, keydown, scroll, wheel, click
-  - clearTimeout + setTimeout en cada evento (rebounce)
-  - API:
-    IdleManager.init(config)   → inicia el timer
-    IdleManager.extend()       → cancela timer y lo reinicia (botón "Continuar")
-    IdleManager.destroy()      → para el timer y remueve listeners
-
-chat-widget-kiosk.js
-  - Solo inline mode (no bubble)
-  - Webhook: POST { chatInput, sessionId } → { output, type }
-  - Sesión fresca: newSession() con crypto.randomUUID() en cada init/reset
-  - Detección de idioma: RE_ES | RE_EN (español por defecto si navigator.language es es-*)
-  - Saludos locales: regex /^(hola|hello|hi|hey|buenas...)$/ → respuesta sin webhook
-  - Aviso lento: setTimeout 45s → addBot(t('slow'))
-  - Linkify seguro: opera solo en nodos de texto (no en atributos HTML)
-  - API global:
-    window.CiraKiosk.reset()    → limpia chat + nueva sesión
-    window.CiraKiosk.send(text) → envía mensaje
-    window.sendPrompt(text)     → alias (compatibilidad con onclick en tarjetas bot)
+MEJORA DE FONDO recomendada: dejar de adivinar por texto. Agregar al logger (CIRA_log /
+Edit Fields1) las columnas resultado_tipo (results|conversation|sin_resultados|comando|error),
+parse_ok, es_error_real. Luego el dashboard filtra por es_error_real=TRUE.
 
 
 ────────────────────────────────────────────────────────────────────────────────
-10. NOTAS IMPORTANTES PARA PRÓXIMAS SESIONES
+7. ANÁLISIS DE SINÓNIMOS (decisión tomada)
 ────────────────────────────────────────────────────────────────────────────────
 
-- cirabot.png pesa 710KB. Para kiosko local no es problema (disco).
-  Si se sube a servidor lento, considerar optimizar a <150KB con squoosh.app.
+Pregunta: ¿el mecanismo de "aprendizajes" (/aprender) sirve para sinónimos?
+  - SÍ técnicamente: /aprender CIRA2024 SINONIMOS: ... se inyecta en el prompt. Cero cambios.
+  - NO óptimo a escala: cada sinónimo infla el prompt (~2000 tokens base) en CADA turno,
+    es guía blanda (LLM decide), sin validación contra catálogo, y ensucia los aprendizajes.
+  - Latencia: impacto bajo en Gemini Flash (el output domina); el costo/confiabilidad es lo crítico.
 
-- El CSS del widget (.ck-*) está en kiosk.css, NO en chat-widget-kiosk.js.
-  Si se modifica el JS del widget y se añaden nuevas clases CSS, añadirlas en kiosk.css.
+Opciones evaluadas:
+  A) reusar /aprender          — 0 cambios, no escala (<15), no valida
+  B) tabla synonyms dedicada   — comandos /sinonimo, /listar-sinonimos, /borrar-sinonimo,
+                                 /validar-sinonimo (valida contra sectors/services) + nodo
+                                 Load Synonyms que inyecta un diccionario compacto. RECOMENDADA.
+  C) pre-expansión determinista— máxima confiabilidad/velocidad, pierde flexibilidad de frases.
 
-- Los scripts tienen defer. Los inline scripts que llaman funciones de scripts
-  defer deben estar dentro de DOMContentLoaded. Las funciones llamadas desde
-  onclick="" deben declararse como globales (fuera de DOMContentLoaded).
+Punto clave: la regla genérica "Búsqueda por concepto" (ya en MEJORADO) resuelve la MAYORÍA
+de casos (ej. abogados) sin sinónimos. Los sinónimos solo hacen falta cuando la palabra del
+usuario ≠ palabra de la BD (gruas→izaje). El universo real es pequeño.
 
-- El servidor de desarrollo local corre en:
-  python -m http.server 8080 (desde ./kiosko/)
-  → http://localhost:8080/index.html
+DECISIÓN DEL USUARIO: por ahora NO crear subsistema de sinónimos. Usar la regla genérica y
+afinar el dashboard (categoría "consultas sin resultado") para juntar data real y decidir
+a futuro con evidencia.
 
-- README.md dentro de kiosko/ tiene documentación completa de ajustes
-  de visualización, escala, animaciones y troubleshooting.
 
-- will-change: transform, opacity está declarado en .avatar-ring y .ck-dot.
-  NO añadir will-change a elementos estáticos (consume memoria GPU sin beneficio).
+────────────────────────────────────────────────────────────────────────────────
+8. ESTADO / ARCHIVOS TOCADOS EN ESTA SESIÓN
+────────────────────────────────────────────────────────────────────────────────
 
-- backdrop-filter está desactivado en (hover:none)|(max-width:768px) para rendimiento
-  en móvil. En desktop kiosko con pantalla grande permanece activo.
+Creados/modificados:
+  - CIRA Bot CAMPET Actual - MEJORADO.json     (nuevo, copia mejorada del flujo)
+  - docs/diagnostico-filtros-falsos-positivos.md (nuevo, brief para el dashboard)
+  - README.md                                  (nueva sección "Diagnóstico y mejoras (jul 2026)")
+  - contexto.txt                               (este volcado)
+
+Original SIN tocar:
+  - CIRA Bot CAMPET Actual.json  (producción)
+
+
+────────────────────────────────────────────────────────────────────────────────
+9. PRÓXIMOS PASOS ABIERTOS
+────────────────────────────────────────────────────────────────────────────────
+
+1. Importar y probar CIRA Bot CAMPET Actual - MEJORADO.json en n8n (workflow nuevo).
+2. Aplicar en el dashboard el brief docs/diagnostico-filtros-falsos-positivos.md:
+   - filtros FP-1..FP-4, corregir métrica de ambigüedad, crear categoría "consultas sin resultado".
+   - validar contra histórico (debe reproducir: ~267 legado, ~340 detalle-1-empresa,
+     ~25 ambigüedad real, ~44 sin-resultado).
+3. Revisar los 🔴 BUG del cruce con catálogo: sospecha fuerte de que "operadores" (un sector)
+   devuelve 0 por cómo se llena la columna Sector en ChatView. Diagnosticar ese dato.
+4. Con la data de "consultas sin resultado" acumulada, decidir si vale un subsistema de
+   sinónimos (opción B) o basta con la regla genérica + /aprender puntual.
+5. (Opcional) Implementar el logging enriquecido (resultado_tipo, parse_ok, es_error_real).
 
 ================================================================================
-FIN DEL CONTEXTO
-================================================================================
-
-================================================================================
-CONTEXTO ACTUALIZADO — Mayo 2025
-================================================================================
-
-────────────────────────────────────────────────────────────────────────────────
-11. MODIFICACIONES RESPONSIVE + KEYBOARD MÓVIL
-────────────────────────────────────────────────────────────────────────────────
-
-PROBLEMAS ENCONTRADOS:
-1. Botones y texto muy grandes para pantallas pequeñas (móvil/tablet)
-2. No se activaba el teclado virtual en dispositivos móviles
-3. Botones ocultos por falta de diseño responsivo
-
-ARCHIVOS MODIFICADOS:
-
-A) kiosko/assets/css/kiosk.css
-   - Agregada nueva sección @media (max-width: 768px) al final
-   - Variables reducidas para pantallas pequeñas:
-     * --btn-min-h: 64px → 48px
-     * --btn-cta-h: 80px → 56px
-     * --fz-lg: 1.4rem → 1.15rem
-     * --fz-xl: 2rem → 1.5rem
-   - Chat widget responsivo:
-     * .ck-textarea: min-height 50px → 42px
-     * .ck-send: 50px → 42px
-     * .ck-bubble: font-size 1.05rem → 0.9rem
-     * .ck-avatar: 34px → 28px
-
-B) kiosko/assets/js/chat-widget-kiosk.js
-   - Agregados atributos al textarea en buildShell():
-     inputmode="text" type="text"
-   - Esto activa el teclado虚拟 en dispositivos móviles
-
-C) kiosko/*.html (bot.html, index.html, ayuda.html)
-   - Modificado viewport meta tag:
-     De: content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-     A: content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes"
-   - Permite zoom manual en pantallas pequeñas
-
-NOTAS:
-- Los efectos de latido (avatar-ring) y flotar (avatarFloat) se mantienen correctos
-- El diseño grandes (kiosko 90x120cm) no se ve afectado por estos cambios
-- Los cambios solo aplican cuando ancho < 768px
-
-────────────────────────────────────────────────────────────────────────────────
-12. ARCHIVOS DEL PROYECTO
-────────────────────────────────────────────────────────────────────────────────
-
-Directorio raíz (chatwidgetcira/):
-  ├── chat-widget-v2.js     → Widget original (para otros usos)
-  ├── kiosko/               → Experiencia kiosko (los cambios reciente aquí)
-  │   ├── index.html
-  │   ├── bot.html
-  │   ├── ayuda.html
-  │   └── assets/
-  │       ├── css/kiosk.css
-  │       └── js/chat-widget-kiosk.js
-  ├── contexto.txt          → Este archivo
-  └── ...
-
-================================================================================
-FIN — MODIFICACIONES Mayo 2025
+FIN DEL CONTEXTO — Sesión 2026-07-28 (diagnóstico y mejoras del bot CIRA)
 ================================================================================

@@ -477,6 +477,47 @@ El widget detecta automáticamente si el usuario escribe en español o inglés b
 
 ---
 
+## Diagnóstico y mejoras del bot (jul 2026)
+
+Análisis de fallos del bot a partir de dos exportes del dashboard de diagnóstico
+(`respuestas ambiguas` y `JSON inválido`, mar–may 2026) cruzados con el flujo, el prompt
+y los catálogos reales (`sectors` = 8 valores, `services` ≈ 100).
+
+### Entregables
+
+| Archivo | Descripción |
+|---|---|
+| `CIRA Bot CAMPET Actual - MEJORADO.json` | Copia del flujo con el prompt y 3 nodos de código mejorados. **Topología idéntica** al original (37 nodos, mismas conexiones). Importar como workflow nuevo y probar antes de reemplazar producción. |
+| `docs/diagnostico-filtros-falsos-positivos.md` | Brief para el IDE del dashboard: reglas para excluir falsos positivos y una categoría nueva y accionable de "consultas sin resultado". |
+
+### Cambios en `- MEJORADO.json` (4 nodos, sin tocar el resto)
+
+| Nodo | Cambio | Problema que resuelve |
+|---|---|---|
+| **Build System Prompt** | 8 sectores incrustados, mapa de sinónimos, regla "Búsqueda por concepto" (buscar también en `name` por raíz), anti-saludo, anti-menú A/B, regla de apóstrofes | Saludos cuando debía buscar; términos válidos sin resultado (`abogados`, `movimiento de tierra`) |
+| **Format Cards2** y **Format Cards** | Header condicional: si `count === 1` muestra "Información de X:" en vez de "¿Te refieres a alguna de estas?" | El bucle de las ~340 "ambiguas" (detalle de 1 empresa que preguntaba "¿quisiste decir?") |
+| **Parse Intent JSON3** | Sanitiza `\'` inválido → `''` y quita prefijo `[INTENT:X]` | `Bad escaped character` con nombres con apóstrofe (`KALA'S, C.A.`) |
+
+### Hallazgos clave del diagnóstico
+
+- El dashboard **sobreestima los errores**: cuenta como fallo toda salida que no sea JSON, pero
+  muchas son respuestas conversacionales correctas (saludos, "no encontramos", fuera de ámbito).
+- Las **340 "ambiguas" eran 100 % falsos positivos** (todas con 1 resultado). La ambigüedad real
+  (~25 casos, menú "A)/B)") estaba mal clasificada dentro de "JSON inválido".
+- Los `[INTENT:...]` (267 filas) son de un **prompt legado** ya reemplazado; no aplican al bot actual.
+- Las "consultas sin resultado" son la **data accionable**: cruzadas contra el catálogo revelan
+  bugs reales (`operadores` —que es un sector— dio 0 en 4 ocasiones) vs. brechas de vocabulario
+  (`gruas`, `levantamiento`). Ver el brief para las consultas SQL de clasificación.
+
+### Decisión vigente sobre sinónimos
+
+Por ahora se usa la **regla genérica** del prompt ("Búsqueda por concepto") en lugar de un
+subsistema de sinónimos. El dashboard debe recolectar la categoría "consultas sin resultado"
+para decidir con datos reales si a futuro conviene una tabla `synonyms` dedicada (con comandos
+`/sinonimo`, `/listar-sinonimos`, `/borrar-sinonimo`, `/validar-sinonimo`) o basta con `/aprender`.
+
+---
+
 ## Credenciales requeridas en n8n
 
 | ID en flujo | Nombre en n8n | Tipo | Usado en |
