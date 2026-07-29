@@ -536,10 +536,16 @@ una columna `metadata` de tipo **jsonb**, todos los campos nuevos viajan dentro 
 sin agregar columnas. La geolocalización y el parseo de user-agent los hace la app de análisis
 en **Cloudflare** a partir de `metadata->>'ip'` y `metadata->>'user_agent'`.
 
-**Datos capturados en `metadata`:** resultado_tipo, needs_clarification, where_clause,
-query_intent, resultados_encontrados, tiempo_respuesta_ms · ip, user_agent, accept_language,
-sec-ch-ua* · (widget) page_url, page_title, referrer, utm_*, visitor_id, msg_index, widget_mode,
-screen, viewport, timezone, connection, wp_user_id, wp_user_role.
+**Datos capturados en `metadata`:** resultado_tipo, parse_status, parse_ok, needs_clarification,
+where_clause, query_intent, resultados_encontrados, tiempo_respuesta_ms · ip, user_agent,
+accept_language, sec-ch-ua* · (widget) page_url, page_title, referrer, utm_*, visitor_id, msg_index,
+widget_mode, screen, viewport, timezone, connection, wp_user_id, wp_user_role.
+
+**Observabilidad de parseo** (`parse_status`): `no_json` (conversación legítima) · `ok` (JSON
+limpio) · `recovered` (JSON malformado rescatado por `Parse Intent JSON3`) · `failed` (no se pudo
+parsear ni rescatar). Cuando es `failed`, la columna `error_log` se marca con `json_parse_failed`
+para que el dashboard lo cuente como error real; los `recovered` quedan visibles sin ensuciar la
+métrica de errores.
 
 **Widget** (`chat-widget-v2.js`): función `collectMeta()` que se envía en el body del POST
 (`{ chatInput, sessionId, meta }`). Retrocompatible con el flujo de producción actual.
