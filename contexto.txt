@@ -302,7 +302,7 @@ Conteo por resultado_tipo (SELECT resultado_tipo, count(*) FROM v_logs GROUP BY 
   conversation       5   ✅ (2 con needs_clarification=true → ambigüedad real capturada)
   sin_resultados     1   ✅ (antes NO se registraba)
   comando            1   ✅ (ruta admin confirmada)
-  comando_error      -   pendiente de ver, pero usa el mismo Build Log (rama Wrong Password)
+  comando_error      1   ✅ (rama Wrong Password confirmada) — LOS 5 TIPOS VALIDADOS
 
 Ejemplo de fila nueva (v_logs) — todos los campos poblados:
   resultado_tipo=results, resultados_encontrados=12, needs_clarification=false,
