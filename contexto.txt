@@ -289,6 +289,35 @@ WordPress: para el usuario logueado, inyectar por PHP window.CiraContext = {page
 Validación: node --check OK en widget y en el jsCode de Build Log. 37 nodos, 0 refs
 residuales a Edit Fields1, Call 'CIRA_log' preservado.
 
+────────────────────────────────────────────────────────────────────────────────
+11. VALIDACIÓN END-TO-END (2026-07-29) — LOGGING CONFIRMADO EN PRODUCCIÓN
+────────────────────────────────────────────────────────────────────────────────
+
+Se importó y probó - MEJORADO.json en n8n con el widget actualizado en
+https://camarapetrolera.org/cira/ (modo inline). RESULTADO: OK, los 4 frentes capturan.
+
+Conteo por resultado_tipo (SELECT resultado_tipo, count(*) FROM v_logs GROUP BY 1):
+  null            2436   → filas históricas (antes del deploy) — usar heurísticas legacy
+  results            8   ✅
+  conversation       5   ✅ (2 con needs_clarification=true → ambigüedad real capturada)
+  sin_resultados     1   ✅ (antes NO se registraba)
+  comando            1   ✅ (ruta admin confirmada)
+  comando_error      -   pendiente de ver, pero usa el mismo Build Log (rama Wrong Password)
+
+Ejemplo de fila nueva (v_logs) — todos los campos poblados:
+  resultado_tipo=results, resultados_encontrados=12, needs_clarification=false,
+  tiempo_respuesta_ms=8905, ip=98.71.80.105, page_url=.../cira/,
+  visitor_id=b7495320-..., user_agent=Chrome/150 Windows, widget_mode=inline
+
+Observaciones de los primeros datos reales:
+  - Latencia medible: una búsqueda tardó 8.9s (vs 1.8-3.2s) → vigilar p95 en dashboard.
+  - resultados_encontrados=100 = tope LIMIT 100 → marcar en dashboard como "consulta muy amplia".
+  - visitor_id consistente entre consultas → sirve para recurrencia/profundidad.
+
+CONCLUSIÓN: captura de datos (outcome + latencia + headers + widget meta) validada de
+punta a punta. Falta del lado app Cloudflare: crear vista v_logs y paneles (ver
+docs/logging-app-metadatos.md).
+
 ================================================================================
-FIN DEL CONTEXTO — Sesión 2026-07-28 (diagnóstico, mejoras y logging del bot CIRA)
+FIN DEL CONTEXTO — Sesión 2026-07-28/29 (diagnóstico, mejoras, logging y validación)
 ================================================================================
